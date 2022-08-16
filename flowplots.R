@@ -7,12 +7,14 @@ library(lubridate)
 library(tidyverse)
 library(zoo)
 
+#test
+
 #Get the Dayflow data from the CNRA portal
 Dayflow = get_odp_data(pkg_id = "dayflow", fnames = "Dayflow Results")
 
 
 #I suck at dealing with lists, so I broke it up into component data frames and then put them together
-#there is probably a better way of doing this. 
+#there is probably a better way of doing this.
 DF1997_2020 =  Dayflow$`Dayflow Results 1997 - 2020` %>%
   mutate( Date = as.Date(Date, format = "%m/%d/%Y")) %>%
   dplyr::select(Date, OUT, EXPORTS, SJR)
@@ -20,7 +22,7 @@ DF1997_2020 =  Dayflow$`Dayflow Results 1997 - 2020` %>%
 
 DF2021 =  Dayflow$`Dayflow Results 2021` %>%
   mutate( Date = as.Date(Date, format = "%m/%d/%Y")) %>%
-  dplyr::select(Date, OUT, EXPORTS, SJR) 
+  dplyr::select(Date, OUT, EXPORTS, SJR)
 
 
 #now I can put them all together!
@@ -62,7 +64,7 @@ ggplot(filter(DFlong2, DOY >120, DOY <270) )+
   xlab("Date")+ ylab("Flow (CFS - seven day average)")
 
 #Facet by metric to be easier to show in presentation
-ann_text <- data.frame(Metric = c("EXPORTS", "OUT", "OUT","EXPORTS", "OUT", "OUT"), 
+ann_text <- data.frame(Metric = c("EXPORTS", "OUT", "OUT","EXPORTS", "OUT", "OUT"),
                        Line = c("TUCP", "D1641", "TUCP", "TUCP", "D1641", "TUCP"),
                        Sevenday = c(1500, 4000, 3000, 1500, 4000, 3000),
                        DOY = c(121, 152, 152, 213, 213, 213))
@@ -83,17 +85,17 @@ DFmonth = mutate(DFlong2, Month = month(Date)) %>%
   group_by(Metric, Metric2, Month) %>%
   summarize(Min = min(CFS, na.rm = T), Max = max(CFS, na.rm = T), mean = mean(CFS, na.rm = T))
 
-DFmonth2 = pivot_wider(filter(DFmonth, Metric2 == "2021"), id_cols = Month, names_from = Metric, values_from = c(Min, Max, mean))      
+DFmonth2 = pivot_wider(filter(DFmonth, Metric2 == "2021"), id_cols = Month, names_from = Metric, values_from = c(Min, Max, mean))
 
 #this is table 2-6 in the report
-write.csv(DFmonth2, file = "Flowsummary.csv", row.names = F)       
+write.csv(DFmonth2, file = "Flowsummary.csv", row.names = F)
 
 
 #######################################################
 #flow by year
 
 DFlong =  mutate(DFlong, Year = year(Date),
-                Metric = factor(Metric, levels = c("OUT", "SJR", "EXPORTS"), labels = c("Outflow", "San Joaquin Flow", "Project Exports"))) 
+                Metric = factor(Metric, levels = c("OUT", "SJR", "EXPORTS"), labels = c("Outflow", "San Joaquin Flow", "Project Exports")))
 
 
 #This is figure 2-19 in the report
