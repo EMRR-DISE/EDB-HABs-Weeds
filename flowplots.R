@@ -45,7 +45,7 @@ DFlong2 = mutate(DFlong, Metric2 = "2021") %>%
   filter(Date > ymd("2021-05-01"), CFS > 0) %>%
   bind_rows(DFmean)
 
-write.csv(DFlong2, "outputs/Flow_2021.csv", row.names = FALSE)
+#write.csv(DFlong2, "outputs/Flow_2021.csv", row.names = FALSE)
 
 #some quick plots
 ggplot(filter(DFlong, Date > ymd("2021-05-01"), CFS >0), aes(x = Date, y = CFS, color = Metric))+
@@ -88,7 +88,7 @@ DFmonth = mutate(DFlong2, Month = month(Date)) %>%
 DFmonth2 = pivot_wider(filter(DFmonth, Metric2 == "2021"), id_cols = Month, names_from = Metric, values_from = c(Min, Max, mean))
 
 #this is table 2-6 in the report
-write.csv(DFmonth2, file = "Flowsummary.csv", row.names = F)
+write.csv(DFmonth2, file = "outputs/Flowsummary.csv", row.names = F)
 
 
 #######################################################
