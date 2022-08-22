@@ -105,8 +105,7 @@ Tox = filter(SpattWater, detect_tox == "Yes")
 SpattWaterX = filter(SpattWater, !toxin %in% NoTox$toxin, !is.na(resultNum)) %>%
   group_by(BGC_ID, Site, NWIS_site_no, Date, date_time, lab, Year, Month, DOY, class)%>%
   summarize(result = sum(resultNum, na.rm = T)) %>%
-  mutate(Date = ymd(Date))
-
+  mutate(Date = mdy(Date))
 
 ggplot(SpattWaterX, aes(x = date_time, y = result)) + geom_point()+
   facet_grid(class~Site, scales = "free_y")
@@ -114,10 +113,8 @@ ggplot(SpattWaterX, aes(x = date_time, y = result)) + geom_point()+
 # Just total toxins with in a class per sample
 SpattWaterXX = SpattWater %>%
   group_by( Site, Date, date_time, Year, Month, DOY, class)%>%
-  summarize(result = sum(resultNum, na.rm = T)) %>%
-  mutate(Date = ymd(Date))
-
-write.csv(SpattWaterXX, "USGSwater.csv")
+  summarize(result = sum(resultNum, na.rm = T))
+#write.csv(SpattWaterXX, "data/USGSwater.csv")
 
 #######################################
 #Spatts
@@ -228,12 +225,12 @@ allTox3 = bind_rows(allTox2, preece, Naut, EastBayX) %>%
   filter(Analyte != "Saxitoxins")
 
 #Attatch stations
-Stas =  read.csv("toxinstations.csv")
+Stas =  read.csv("data/toxinstations.csv")
 allTox3a = left_join(allTox3, Stas)
 
 #Alltoxsf = dplyr::select(Alltoxsf, Station, Date, Year, Month, Analyte, result, Study, Region, Stratum2, Stratum3)
 #save(Alltoxsf, file = "Alltoxindata.RData")
-load("Regions.RData")
+load("data/Regions.RData")
 Alltoxsf = st_as_sf(allTox3a, coords = c("lat", "lon"), crs = 4326)
 reg3crop = st_crop(reg3, xmin = -121.9, xmax = -121.2, ymin = 37.65, ymax = 38.4)
 
@@ -249,7 +246,7 @@ load(file = "data/HABs/Alltoxindata.RData")
 
 mypal =  c(brewer.pal(10, "Set3"), "gray", "darkolivegreen")
 
-load("Regions.RData")
+load("data/Regions.RData")
 
 Alltoxsf = mutate(Alltoxsf, Study = case_when(
   Study == "CVRWQCB" ~ "Regional Board",
@@ -411,9 +408,9 @@ ggsave(filename = "plotsBigBreak2021.tiff", device = "tiff", width = 4, height =
 #############################3
 #add health adivsory levels to toxin data
 #This is for the table in the appendix
-load("data/data package/Alltoxindata.RData")
+load("data/HABs/Alltoxindata.RData")
 
-Alltox3 = mutate(Alltox3, Advisory = case_when(Analyte == "Microcystins" & result > 0.8 & result < 6 ~ "Caution",
+Alltox3 = mutate(Alltoxsf, Advisory = case_when(Analyte == "Microcystins" & result > 0.8 & result < 6 ~ "Caution",
                                                  Analyte == "Microcystins"  & result >= 6 & result < 20 ~ "Warning",
                                                  Analyte == "Microcystins"  & result >= 20 ~ "Danger",
                                                  Analyte == "Microcystins"  & result < 0.8 ~ "No Advisory",
@@ -421,7 +418,7 @@ Alltox3 = mutate(Alltox3, Advisory = case_when(Analyte == "Microcystins" & resul
                                                Analyte == "Anatoxins"  & result > 0 & result < 20 ~ "Caution",
                                                Analyte == "Anatoxins"  & result == 0 ~ "No Advisory"))
 
-write.csv(Alltox3, "Alltoxindata.csv")
+write.csv(Alltox3, "data/Alltoxindata.csv")
 
 #Export a shapefile so that ICF can use it for the EJ chapter
 Alltoxsf = st_as_sf(Alltox3, coords = c("Latitude", "Longitude"), crs = 4326)
