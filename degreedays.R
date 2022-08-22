@@ -56,7 +56,7 @@ DDyear = mutate(TempsD, Year = year(Date), DOY = yday(Date)) %>%
   summarise(Daily.Max = mean(Daily.Max, na.rm = T), Daily.Min = mean(Daily.Min, na.rm = T), WaterMean = mean(Daily.Mean))%>%
   group_by(Year) %>%
   mutate(Degreedays = gdd(tmax = Daily.Max, tmin = Daily.Min, tbase = 19, tbase_max = 35),
-         MaxDD = max(Degreedays, na.rm = T)) 
+         MaxDD = max(Degreedays, na.rm = T))
 
 #plot the average degree days for all stations by year.
 ggplot(DDyear, aes(x = DOY, y = Degreedays, color = as.factor(Year)))+
@@ -73,7 +73,7 @@ library(cder)
 #unfortunately, we don't have a lot of stations with air temperature
 Airtemp = cdec_query(c("RRI", "MSD", "SJR"), 4, "E", start.date = ymd("2015-01-01"), end.date = ymd("2021-12-30"))
 
-#Convert to celcius and calculate the mean, max and min temperature per day. 
+#Convert to celcius and calculate the mean, max and min temperature per day.
 AirtempM = Airtemp %>%
   mutate(Year = year(ObsDate), DOY = yday(ObsDate)) %>%
   group_by(Year, DOY, StationID) %>%
@@ -128,7 +128,7 @@ ggplot(AirDD, aes(x = DOY, y = DegreedaysA, color = as.factor(Year)))+
 alltemp = left_join(DDyear, AirDD)
 
 #plot air temp versus water temp
-ggplot(alltemp, aes(x = WaterMean, y = TempC, color = as.factor(Year))) + 
+ggplot(alltemp, aes(x = WaterMean, y = TempC, color = as.factor(Year))) +
   geom_point()+
   scale_color_brewer(palette = "Set2", name = NULL)+
   geom_smooth(method = "lm")+
@@ -142,7 +142,7 @@ alltemplong = alltemp %>%
 
 #TEMPERATURE PLOT FOR REPORT
 #this is figure 2-20
-ggplot(alltemplong, aes(x = DOY, y =`MeanTemp`, color = as.factor(Year))) + 
+ggplot(alltemplong, aes(x = DOY, y =`MeanTemp`, color = as.factor(Year))) +
   geom_point(alpha = 0.1)+
   scale_color_brewer(palette = "Set2", name = NULL)+
   geom_smooth(se = FALSE)+
@@ -171,7 +171,7 @@ Maxes = alltemp %>%
 
 #DEGREE DAYS PLOT FOR REPORT
 #this is figure 2-21
-ggplot(allDDlong, aes(x = DOY, y =`DegreeDays`, color = as.factor(Year))) + 
+ggplot(allDDlong, aes(x = DOY, y =`DegreeDays`, color = as.factor(Year))) +
   coord_cartesian(xlim = c(70, 320))+
   geom_hline(data = Maxes, aes(yintercept = MaxDD, color = as.factor(Year)), linetype = 2, size = 1)+
   scale_color_brewer(palette = "Set2", name = NULL)+
@@ -187,6 +187,7 @@ write.csv(allDDlong, "outputs/DegreeDays.csv", row.names = FALSE)
 #####################################################################
 # water quality map
 #This is the basis for figure 2-5, but Ted tweaked it a bit in Illustrator
+hab_nutr_chla_mvi = read_csv("data/hab_nutr_chla_mvi.csv")
 nutsallsf = hab_nutr_chla_mvi %>%
   group_by(Source, Station, Longitude, Latitude) %>%
   summarize(N = n()) %>%
@@ -207,7 +208,7 @@ ggplot() + geom_sf(data=reg3, aes(fill = Stratum2), alpha = 0.7)+
     theme_bw()+
   scalebar(dist = 10, dist_unit = "km",
            transform = TRUE, st.dist = .1, x.min = -121.6, x.max = -121.8, y.min = 37.6, y.max = 37.8) +
-  
+
   #there are a number of different optinos for north arrow symbols. ?north
   north(data = reg3, symbol = 2) +
   theme_bw()+ylab("")+xlab("")+

@@ -11,10 +11,10 @@ library(gridExtra)
 library(sf)
 library(ggmap)
 
-#Hi Rosemary, below is the code for NP ratio calculations and potential Chl a. 
-#These calculations were used to add the columns to the DWR_NutChl.csv spreadsheet that I emailed you previously. 
-#Just FYI, to go from mg to ug, values are multiplied by 1000, and to go from ug to umol, values are divided by 14 for N and by 31 for P. 
-#Contracting into one step, to go from mg/L NH4 to umol/L NH4 multiply by 71.43 and to go from mg/L orthophosphate to umol/L orthophosphate, 
+#Hi Rosemary, below is the code for NP ratio calculations and potential Chl a.
+#These calculations were used to add the columns to the DWR_NutChl.csv spreadsheet that I emailed you previously.
+#Just FYI, to go from mg to ug, values are multiplied by 1000, and to go from ug to umol, values are divided by 14 for N and by 31 for P.
+#Contracting into one step, to go from mg/L NH4 to umol/L NH4 multiply by 71.43 and to go from mg/L orthophosphate to umol/L orthophosphate,
 #multiply by 32.26. Best, Mine
 hab_nutr_chla_mvi <- read_csv("data/hab_nutr_chla_mvi.csv")
 
@@ -25,7 +25,7 @@ nc<- hab_nutr_chla_mvi %>%
          Orthophosphate_mgL = DissOrthophos,
          Chla_ugL = Chlorophyll)
 
-#Calculate molar nitrogen and phosphorus  
+#Calculate molar nitrogen and phosphorus
 nc = mutate(nc, NH4_umolL= Ammonium_mgL*71.43,
             NO3_umolL= Nitrate_mgL*71.43,
             PO4_umolL= Orthophosphate_mgL*32.26,
@@ -37,9 +37,9 @@ nc = mutate(nc, NH4_umolL= Ammonium_mgL*71.43,
             Year = year(Date),
             month = month(Date))
 
-#To calculate residual chlorophyll, residual nitrogen concentration was converted to chlorophyll 
-#using the ratio 1 micromole N: 1 microgram chlorophyll-a (Cloern and Jassby 2012; Gowen et al. 1992). 
-#Residual nitrogen was calculated by summing all the dissolved inorganic nitrogen species (nitrate + nitrite + ammonium) in units of molar mass N. 
+#To calculate residual chlorophyll, residual nitrogen concentration was converted to chlorophyll
+#using the ratio 1 micromole N: 1 microgram chlorophyll-a (Cloern and Jassby 2012; Gowen et al. 1992).
+#Residual nitrogen was calculated by summing all the dissolved inorganic nitrogen species (nitrate + nitrite + ammonium) in units of molar mass N.
 #Potential chlorophyll-a was compared with measured chlorophyll-a for each region of the Delta for the summers of 2014–2020, and for summer 2021.
 
 #Pivot longer for graphing
@@ -70,7 +70,7 @@ t<-theme(strip.text.x = element_text(size = 14, colour = "black"),strip.text.y =
 #Update and save plot
 c1<-c+theme_bw()+t
 c1
-#ggsave("ChlRegions.png")
+#ggsave("plots/ChlRegions.png")
 
 #Repeat for just the southern Delta
 cf<-cs[cs$Region == 'Lower SJ' | cs$Region == 'Franks' | cs$Region == 'OMR' ,]
@@ -83,7 +83,7 @@ d<-ggplot(cf, aes(fill=Analyte, y=mgLm, x=month))+
 
 d1<-d+theme_bw()+t
 d1
-#ggsave("ChlFranks.png")
+#ggsave("plots/ChlFranks.png")
 
 ###############################################################
 #N:P ratio
@@ -97,9 +97,9 @@ ggplot(filter(Ratiossum, month %in% c(6,7,8,9)), aes(x = month, y = NPratioM)) +
   geom_hline(yintercept = 16, color = "red")+
   geom_errorbar(aes(ymin = NPratioM-sdNP, ymax = NPratioM + sdNP))
 
-load("Regions.RData")
-#This is Figure A-3 in Appendix A. 
-ggplot(Ratiossum, aes(x = month, y = NPratioM, fill = Region)) + geom_col()+ 
+load("data/Regions.RData")
+#This is Figure A-3 in Appendix A.
+ggplot(Ratiossum, aes(x = month, y = NPratioM, fill = Region)) + geom_col()+
   facet_grid(Region~Year, scales = "free_y")+
   geom_hline(yintercept = 16, color = "red")+
   geom_errorbar(aes(ymin = minNP, ymax = maxNP))+
@@ -110,17 +110,12 @@ ggplot(Ratiossum, aes(x = month, y = NPratioM, fill = Region)) + geom_col()+
 
 ###################################################################
 #Now some basic graphs of nutrients
-
-#quick check of hte nurient data
-load("Regions.RData")
-hab_nutr_chla_mvi <- read_csv("data/hab_nutr_chla_mvi.csv")
-
 #replace values below the reporting limits with zeros
 #Note: There are better ways to do this, I was tired and I don't think it really matters that much
 #maybe this is somethign Amanda can help with
 
 #First start with just the data from 2021
-Nuts = mutate(hab_nutr_chla_mvi, Month = month(Date), 
+Nuts = mutate(hab_nutr_chla_mvi, Month = month(Date),
               Year = year(Date),Chlorophyll = as.numeric(Chlorophyll),
               Nitrate = as.numeric(DissNitrateNitrite),
               Phosphorus = as.numeric(DissOrthophos)) %>%
@@ -161,7 +156,7 @@ nutssf %>%
   map(~ ggplot(., aes(x= Date, y = Nitrate, color = Station ))+geom_point() + geom_line() +
         xlab("Date")+ ylab("Nitrate + Nitrite (mg/L)") +
         scale_color_manual(values = pal)+
-        annotate("rect", xmin = min(nutssf$Date), 
+        annotate("rect", xmin = min(nutssf$Date),
                  xmax =  max(nutssf$Date),
                  ymin = 0, ymax = 0.04, alpha = 0.5, fill = "gray")+
         ggtitle(.$Region)+
@@ -173,7 +168,7 @@ nutssf %>%
         guides(color = guide_legend(override.aes = list(size = 1), nrow = 7))) %>%
   cowplot::plot_grid(plotlist = ., nrow = 4)
 
-#ggsave(filename = "Nitrate.tiff", device = "tiff", width = 10, height = 12)
+#ggsave(filename = "plots/Nitrate.tiff", device = "tiff", width = 10, height = 12)
 
 
 #Plot the ammonium data. This is figure 2-8
@@ -185,10 +180,10 @@ nutssf %>%
         geom_point() + geom_line() +
         xlab("Date")+ ylab("Ammonium (mg/L)") +
         scale_color_manual(values = pal)+
-        annotate("rect", xmin = min(nutssf$Date), 
+        annotate("rect", xmin = min(nutssf$Date),
                  xmax =  max(nutssf$Date),
                  ymin = 0, ymax = 0.05, alpha = 0.5, fill = "gray")+
-        
+
         ggtitle(.$Stratum2)+
         theme_bw()+
         theme(legend.margin = margin(0, 0,0,0),
@@ -198,7 +193,7 @@ nutssf %>%
         guides(color = guide_legend(override.aes = list(size = 1), nrow = 7))) %>%
   cowplot::plot_grid(plotlist = ., nrow = 4)
 
-#ggsave(filename = "Ammonium.tiff", device = "tiff", width = 10, height = 12)
+#ggsave(filename = "plots/Ammonium.tiff", device = "tiff", width = 10, height = 12)
 
 
 #Plot Chlorophyll. FIgure 2-7
@@ -210,7 +205,7 @@ nutssf %>%
         xlab("Date")+ ylab("Chlorophyll (ug/L)") +
         scale_color_manual(values = pal)+
         ggtitle(.$Stratum2)+
-        annotate("rect", xmin = min(nutssf$Date), 
+        annotate("rect", xmin = min(nutssf$Date),
                  xmax =  max(nutssf$Date),
                  ymin = 0, ymax = 0.5, alpha = 0.5, fill = "gray")+
         theme_bw()+
@@ -218,11 +213,11 @@ nutssf %>%
               legend.text = element_text(size = 7),
               legend.title = element_blank(), legend.key.size = unit(1, "line"),
               legend.background = element_rect(fill = "transparent"))+
-        
+
         guides(color = guide_legend(override.aes = list(size = 1), nrow = 7))) %>%
   cowplot::plot_grid(plotlist = ., nrow = 4)
 
-#ggsave(filename = "Chlorophyll.tiff", device = "tiff", width = 10, height = 12)
+#ggsave(filename = "plots/Chlorophyll.tiff", device = "tiff", width = 10, height = 12)
 
 
 #Plot ortho-phosphate, figure 2-10
@@ -235,7 +230,7 @@ nutssf %>%
         scale_color_manual(values = pal)+
         ggtitle(.$Stratum2)+
         theme_bw()+
-        annotate("rect", xmin = min(nutssf$Date), 
+        annotate("rect", xmin = min(nutssf$Date),
                  xmax =  max(nutssf$Date),
                  ymin = 0, ymax = 0.05, alpha = 0.5, fill = "gray")+
         theme(legend.margin = margin(0, 0,0,0),
@@ -245,11 +240,11 @@ nutssf %>%
         guides(color = guide_legend(override.aes = list(size = 1), nrow = 7))) %>%
   cowplot::plot_grid(plotlist = ., nrow = 4)
 
-#ggsave(filename = "Orthophos.tiff", device = "tiff", width = 10, height = 12)
+#ggsave(filename = "plots/Orthophos.tiff", device = "tiff", width = 10, height = 12)
 
 
 #P8 had some really high values. Is that normal?
-P8 = filter(mutate(hab_nutr_chla_mvi, Month = month(Date), 
+P8 = filter(mutate(hab_nutr_chla_mvi, Month = month(Date),
                    Year = year(Date),Chlorophyll = as.numeric(Chlorophyll),
                    Nitrate = as.numeric(DissNitrateNitrite)), Station %in% c("P8", "D19", "OSJ", "C9"))
 ggplot(P8, aes(x = Date, y = Nitrate, color = Station)) + geom_line()
@@ -259,10 +254,10 @@ ggplot(filter(P8, !is.na(DissAmmonia)), aes(x = Date, y = as.numeric(DissAmmonia
 ###########################################################
 #South Delta Nutrients by season and year
 #from 2014-2021
-SoNuts = mutate(hab_nutr_chla_mvi, Month = month(Date), 
+SoNuts = mutate(hab_nutr_chla_mvi, Month = month(Date),
                 Year = year(Date),Chlorophyll = as.numeric(Chlorophyll),
                 NitrateNitrite = as.numeric(DissNitrateNitrite),
-                Ammonium = as.numeric(DissAmmonia), 
+                Ammonium = as.numeric(DissAmmonia),
                 Orthophos = as.numeric(DissOrthophos)) %>%
   mutate(Chl = case_when(Chlorophyll_Sign == "<" ~ 0,
                          TRUE ~ Chlorophyll),
@@ -294,7 +289,7 @@ SoNutsmean = Sonutssf %>%
   pivot_longer(cols = c(Ammonium, Chl, Nitrate, Phosphorus), names_to= "Analyte",
                values_to = "Concentration")  %>%
   group_by(Year, Season, Analyte) %>%
-  summarize(ConcentrationM = mean(Concentration, na.rm = T), 
+  summarize(ConcentrationM = mean(Concentration, na.rm = T),
             SEc = sd(Concentration, na.rm = T)/sqrt(n())) %>%
   mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))
 
@@ -306,7 +301,7 @@ ggplot(SoNutsmean, aes(x=Year, y = ConcentrationM, fill = Season)) + geom_col()+
   ylab("Concentration")+
   theme_bw()
 
-ggsave(filename = "Nutrients.tiff", device = "tiff", width = 6, height = 5)
+ggsave(filename = "plots/Nutrients.tiff", device = "tiff", width = 6, height = 5)
 ##################################3
 #nutrient statistics
 library(lme4)
@@ -362,7 +357,7 @@ Orthg = plot(emmeans(Orth, specs = "Year", by = "Season"), comparison = T)+
 
 cowplot::plot_grid(Amg, CHLg, Nitg, Orthg, nrow = 2)
 
-ggsave(filename = "Nutsemmeans.tiff", device = "tiff", path = "plots/", 
+ggsave(filename = "Nutsemmeans.tiff", device = "tiff", path = "plots/",
        width = 8, height = 10)
 
 ##########################################################################################
