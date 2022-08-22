@@ -29,40 +29,40 @@ library(ggpmisc) #add equations and R^2 to plots
 #area estimates for the three regions
 
 #2004-2008, 2014-2015, 2019-2020
-cc <- read_csv("EDB/weeds_regional_area_estimates/CliftonCourt_wgs84_area_ha.csv")%>% 
-  add_column("site" = as.factor("Clifton Court")) 
+cc <- read_csv("weeds_regional_area_estimates/CliftonCourt_wgs84_area_ha.csv")%>%
+  add_column("site" = as.factor("Clifton Court"))
 
 #2004-2008, 2014-2020
-ft <- read_csv("EDB/weeds_regional_area_estimates/FranksTract_wgs84_area_ha.csv")%>% 
+ft <- read_csv("weeds_regional_area_estimates/FranksTract_wgs84_area_ha.csv")%>%
   add_column("site" = as.factor("Franks Tract"))
 
 #2004-2008, 2014-2020
-bb <- read_csv("EDB/weeds_regional_area_estimates/BigBreak_wgs84_area_ha.csv")%>% 
-  add_column("site" = as.factor("Big Break")) 
+bb <- read_csv("weeds_regional_area_estimates/BigBreak_wgs84_area_ha.csv")%>%
+  add_column("site" = as.factor("Big Break"))
 
 #2021 data for all sites
-new <- read_csv("EDB/weeds_regional_area_estimates/RegionalAreaEstimates_2021_Provisional.csv") 
+new <- read_csv("weeds_regional_area_estimates/RegionalAreaEstimates_2021_Provisional.csv")
 
 #read in time series of area data for common area of the delta from SMR repo
 smr <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/Status-and-Trends/master/data/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
 
 #estimated waterway area for each of the three sites, legal delta, and common area of delta
 #use these to calculate proportion of area covered by SAV and FAV
-ww <- read_csv("EDB/weeds_regional_area_estimates/waterway_area_ha.csv")
+ww <- read_csv("weeds_regional_area_estimates/waterway_area_ha.csv")
 
 #read in sonde data (2015-2021)
-wqf <- read_csv("EDB/frk_sonde_data_summary.csv")
+wqf <- read_csv("data/frk_sonde_data_summary.csv")
 
 #read in discrete wq data and delta outflow (2004-2021)
-wqd <- read_csv("EDB/discrete_wq&outflow_data_summary.csv")
+wqd <- read_csv("outputs/discrete_wq&outflow_data_summary.csv")
 
 #read in fluridone application data (2006-2021)
-herb <- read_csv("EDB/franks_tract_fluridone_applications_2006-2021_summary.csv")
+herb <- read_csv("data/franks_tract_fluridone_2006-2021_summary.csv")
 
 #combine veg area estimates data into one data set (up to 2020)-----------
 
-all <- bind_rows(ft,cc,bb)%>% 
-  rename(year_month = Year) %>% 
+all <- bind_rows(ft,cc,bb)%>%
+  rename(year_month = Year) %>%
   mutate(
     #create year column from year-month
     year=as.integer(str_sub(year_month,1,4))
@@ -76,7 +76,7 @@ all <- bind_rows(ft,cc,bb)%>%
     ,sav_prop = sav/total
     #calculate proportion of area that is FAV
     ,fav_prop = fav/total
-  )  %>% 
+  )  %>%
   #reduce to just needed columns and reorder them
   select(
     year
@@ -86,19 +86,19 @@ all <- bind_rows(ft,cc,bb)%>%
     ,fav
     ,sav_prop
     ,fav_prop
-  ) %>% 
+  ) %>%
   glimpse()
 
 #format the 2021 data to combine with rest of data series
 new_formatted <- new %>%
   #only keep the column for area estimated in ha
-  select(year:site,hectares) %>% 
+  select(year:site,hectares) %>%
   #for now drop, the whole delta and delta common area data
-  filter(site!="Legal Delta" & site!="Delta Common Area") %>% 
+  filter(site!="Legal Delta" & site!="Delta Common Area") %>%
   #convert to wide form
-  pivot_wider(id_cols=c(year, month, site),names_from = type,values_from = hectares) %>% 
+  pivot_wider(id_cols=c(year, month, site),names_from = type,values_from = hectares) %>%
   #clean up column names
-  clean_names()  %>% 
+  clean_names()  %>%
   mutate(
     #make year an integer
     year=as.integer(year)
@@ -112,7 +112,7 @@ new_formatted <- new %>%
     ,sav_prop = sav/total
     #calculate proportion of area that is FAV
     ,fav_prop = fav/total
-  )   %>% 
+  )   %>%
   #reduce to just needed columns and reorder them
   select(
     year
@@ -122,7 +122,7 @@ new_formatted <- new %>%
     ,fav
     ,sav_prop
     ,fav_prop
-  ) %>% 
+  ) %>%
   glimpse()
 
 #combine 2021 data with rest of time series
@@ -131,7 +131,7 @@ alln <- bind_rows(all,new_formatted)
 #add another way of calculating proportion of area as SAV and FAV
 #existing columns sum area of all classes for denominator
 #also try using standard waterway area, mostly derived from DBW data
-allnw <- left_join(alln,ww) %>% 
+allnw <- left_join(alln,ww) %>%
   #create SAV and FAV proportions using waterway area
   mutate(
     sav_prop_w = sav/waterways_ha
@@ -141,40 +141,40 @@ allnw <- left_join(alln,ww) %>%
 #quick plots of correlation between two proportion types
 ggplot(allnw,aes(sav_prop,sav_prop_w))+
   geom_abline(intercept = 0, slope=1,linetype="dashed")+
-  geom_smooth(method = "lm")  + 
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_cor(method = "pearson")
-  
+
 ggplot(allnw,aes(fav_prop,fav_prop_w))+
   geom_abline(intercept = 0, slope=1,linetype="dashed")+
-  geom_smooth(method = "lm")  + 
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_cor(method = "pearson")
 
 #look at number of years for each imaging month
-season <- alln %>% 
-  distinct(year,month) %>% 
-  group_by(month) %>% 
+season <- alln %>%
+  distinct(year,month) %>%
+  group_by(month) %>%
   summarize(count = n())
 
 #total veg: convert wide to long
-veg_tot <- alln %>% 
-  select(year:fav) %>% 
-  pivot_longer(c(sav:fav), names_to = "type_total", values_to = "area_ha") %>% 
-  mutate(across(c("type_total"), as.factor))  
+veg_tot <- alln %>%
+  select(year:fav) %>%
+  pivot_longer(c(sav:fav), names_to = "type_total", values_to = "area_ha") %>%
+  mutate(across(c("type_total"), as.factor))
 
 #proportion veg: convert wide to long
-veg_prop <- alln %>% 
-  select(year:site,sav_prop:fav_prop)%>% 
-  pivot_longer(c(sav_prop:fav_prop), names_to = "type_prop", values_to = "area_prop") %>% 
-  mutate(across(c("type_prop"), as.factor)) 
+veg_prop <- alln %>%
+  select(year:site,sav_prop:fav_prop)%>%
+  pivot_longer(c(sav_prop:fav_prop), names_to = "type_prop", values_to = "area_prop") %>%
+  mutate(across(c("type_prop"), as.factor))
 
 #focal sites: stacked bar plots------------------------------
 #add symbol for missing data
 #use better colors
 (foc_ha <- ggplot(veg_tot, aes(x=year, y=area_ha,  fill = type_total))+
-  geom_bar(position = "stack", stat = "identity", colour="grey25") + 
-  ylab("Vegetation Coverage (ha)") + xlab("Year") + 
+  geom_bar(position = "stack", stat = "identity", colour="grey25") +
+  ylab("Vegetation Coverage (ha)") + xlab("Year") +
   #scale_fill_discrete(labels=c("FAV","SAV")) +
   scale_fill_manual(name= NULL
                     ,labels=c("Floating","Submersed")
@@ -183,7 +183,7 @@ veg_prop <- alln %>%
   )  +
   #customizes names in legend key, specifies the custom color palette, and sets height of elements in legend
   theme(
-    legend.box.spacing=unit(0, units="cm"), 
+    legend.box.spacing=unit(0, units="cm"),
     legend.margin=margin(t=0,r=0,b=2,l=0, unit="pt")) +
   theme_bw()+
   facet_grid(site~.)
@@ -193,8 +193,8 @@ veg_prop <- alln %>%
 
 #proportion area: stacked bar plots
 ggplot(veg_prop, aes(x=year, y=area_prop,  fill = type_prop))+
-  geom_bar(position = "stack", stat = "identity") + 
-  ylab("Vegetation Coverage Proportion") + xlab("Year") + 
+  geom_bar(position = "stack", stat = "identity") +
+  ylab("Vegetation Coverage Proportion") + xlab("Year") +
   scale_fill_discrete(labels=c("FAV","SAV")) +
   facet_grid(site~.)
 
@@ -207,14 +207,14 @@ ggplot(veg_prop, aes(x=year, y=area_prop,  fill = type_prop))+
 #2105 sudden increase in SAV
 #2015-2020: sustained high SAV
 
-erg <- alln %>% 
-  #just FT 
-  filter(site=="Franks Tract") 
+erg <- alln %>%
+  #just FT
+  filter(site=="Franks Tract")
 
-bbeff <- alln %>% 
+bbeff <- alln %>%
   filter(site=="Big Break")
 
-cceff <- alln %>% 
+cceff <- alln %>%
   filter(site=="Clifton Court")
 range(cceff$fav_prop)
 
@@ -222,30 +222,30 @@ range(cceff$fav_prop)
 #barplot of common area of delta through time--------------------
 
 #format time series that is just missing 2021
-veg_cm <- smr %>% 
+veg_cm <- smr %>%
   #drop 2021 because it's just NAs
-  filter(year!="2021") %>% 
+  filter(year!="2021") %>%
   #just keep the needed columns
-  select(year, sav_prop,wh_prop,wp_prop) %>% 
-  rename(sav = sav_prop) %>% 
+  select(year, sav_prop,wh_prop,wp_prop) %>%
+  rename(sav = sav_prop) %>%
   #the original fav_tot_prop column includes pennywort
   #lets make a new one that is just water hyacinth and water primrose
-  mutate(fav = wh_prop + wp_prop) %>% 
+  mutate(fav = wh_prop + wp_prop) %>%
   #drop unneeded columns
-  select(-c(wh_prop,wp_prop)) %>% 
+  select(-c(wh_prop,wp_prop)) %>%
   #convert to long format
-  pivot_longer(cols = sav:fav, names_to = "type", values_to = "prop") 
-  
+  pivot_longer(cols = sav:fav, names_to = "type", values_to = "prop")
+
 #get the 2021 data for the common delta area
 veg_cm_new <- new %>%
   #only keep the column for area estimated in ha
-  select(year:site,hectares) %>% 
+  select(year:site,hectares) %>%
   #for now drop, the whole delta and delta common area data
-  filter(site=="Delta Common Area") %>%  
+  filter(site=="Delta Common Area") %>%
   #convert to wide form
-  pivot_wider(id_cols=c(year, month, site),names_from = type,values_from = hectares) %>% 
+  pivot_wider(id_cols=c(year, month, site),names_from = type,values_from = hectares) %>%
   #clean up column names
-  clean_names() %>% 
+  clean_names() %>%
   mutate(
     #make year an integer
     year=as.integer(year)
@@ -259,7 +259,7 @@ veg_cm_new <- new %>%
     ,sav_prop = sav/total
     #calculate proportion of area that is FAV
     ,fav_prop = fav/total
-  )   %>% 
+  )   %>%
   #reduce to just needed columns and reorder them
   select(
     year
@@ -269,23 +269,23 @@ veg_cm_new <- new %>%
     ,fav
     ,sav_prop
     ,fav_prop
-  ) %>% 
+  ) %>%
   glimpse()
 
 #add another way of calculating proportion of area as SAV and FAV
 #existing columns sum area of all classes for denominator
 #also try using standard waterway area, mostly derived from DBW data
-allnw2 <- left_join(veg_cm_new,ww) %>% 
+allnw2 <- left_join(veg_cm_new,ww) %>%
   #create SAV and FAV proportions using waterway area
   #use this one
   mutate(
     sav_prop = sav/waterways_ha
     ,fav_prop = fav/waterways_ha
-  ) %>% 
+  ) %>%
   #just keep needed columns
-  select(year,sav_prop,fav_prop) %>% 
+  select(year,sav_prop,fav_prop) %>%
   rename(sav = sav_prop
-         ,fav = fav_prop) %>% 
+         ,fav = fav_prop) %>%
   #convert to long format
   pivot_longer(cols = sav:fav, names_to = "type", values_to = "prop")
 
@@ -293,9 +293,9 @@ allnw2 <- left_join(veg_cm_new,ww) %>%
 alln2 <- bind_rows(veg_cm,allnw2)
 
 #make time series barplot
-(veg_perc <- ggplot(data=alln2,aes(x=year, y=prop, fill=type)) + 
+(veg_perc <- ggplot(data=alln2,aes(x=year, y=prop, fill=type)) +
     #specifies the independent and dependent variables as well as groupings
-    geom_bar(position="stack", stat="identity", colour="grey25")+  
+    geom_bar(position="stack", stat="identity", colour="grey25")+
     #specifies that this is a stacked bar plot
     ylab("Water area occupied") + xlab("Year")+
     #x- and y-axis labels
@@ -306,14 +306,14 @@ alln2 <- bind_rows(veg_cm,allnw2)
     )  +
     #customizes names in legend key, specifies the custom color palette, and sets height of elements in legend
     theme(
-      legend.box.spacing=unit(0, units="cm"), 
+      legend.box.spacing=unit(0, units="cm"),
       legend.margin=margin(t=0,r=0,b=2,l=0, unit="pt")) +
     theme_bw()
 )
 #ggsave(plot=veg_perc, "EDB/Hyperspectral_Veg_Area_TimeSeries_DeltaCommonArea.png",type ="cairo-png",width=8, scale=0.9, height=4.5,units="in",dpi=300)
 
 
-#Compare veg areas to discrete WQ and delta outflow--------------------------  
+#Compare veg areas to discrete WQ and delta outflow--------------------------
 #NOTE: cut the discrete WQ data formatting and moved to different file
 #Need to add the formatted version back to this file for subsequent analysis
 
@@ -326,11 +326,11 @@ stm <- as.data.frame(
 )
 
 #add region info to WQ data set
-wr <- full_join(wqd,stm) %>% 
+wr <- full_join(wqd,stm) %>%
   arrange(site,year)
 
 #then add veg data
-wrv <-left_join(alln,wr) %>% 
+wrv <-left_join(alln,wr) %>%
   arrange(site,year)
 #delta outflow data missing for Big Break but shouldn't be
 #fix this in the AquaticVeg_EnvDrivers.R code
@@ -340,14 +340,14 @@ wrv <-left_join(alln,wr) %>%
 #use discrete WQ data instead
 
 #need to convert long to wide for correlation matrix
-wq_format <- wqf %>% 
-  select(-value_se) %>% 
+wq_format <- wqf %>%
+  select(-value_se) %>%
   pivot_wider(
     id_cols=c(year)
     ,names_from = parameter
     , values_from= value_mean
-  ) %>% 
-  mutate(year = as.integer(year)) %>% 
+  ) %>%
+  mutate(year = as.integer(year)) %>%
   glimpse()
 
 
@@ -357,7 +357,7 @@ wq_format <- wqf %>%
 #Clifton Court: correlations among all land surface types
 
 #need to drop the years with missing data first
-ccz <- cc %>% 
+ccz <- cc %>%
   filter(sav!=0)
 
 chart.Correlation(ccz[2:10])
@@ -389,18 +389,18 @@ chart.Correlation(bb[2:10])
 #make comparisons among sites within land types-----------
 
 #format data sets
-veg_corr <- alln %>% 
-  select(year:site,sav_prop:fav_prop) %>% 
+veg_corr <- alln %>%
+  select(year:site,sav_prop:fav_prop) %>%
   pivot_wider(id_cols = c(year,month), names_from = site, values_from = c(sav_prop,fav_prop)) %>%
   #rename columns
   rename(
-    sav_prop_ft = "sav_prop_Franks Tract" 
+    sav_prop_ft = "sav_prop_Franks Tract"
     ,sav_prop_bb = "sav_prop_Big Break"
     ,sav_prop_cc = "sav_prop_Clifton Court"
-    ,fav_prop_ft = "fav_prop_Franks Tract" 
+    ,fav_prop_ft = "fav_prop_Franks Tract"
     ,fav_prop_bb = "fav_prop_Big Break"
     ,fav_prop_cc = "fav_prop_Clifton Court"
-  ) %>% 
+  ) %>%
   glimpse()
 
 
@@ -416,7 +416,7 @@ ggplot(veg_corr, aes(x=sav_prop_ft, y= sav_prop_bb))+
               , vjust = -0.9
               )+
     xlab("Franks Tract SAV")+
-    ylab("Big Break SAV ") 
+    ylab("Big Break SAV ")
 
 ggplot(veg_corr, aes(x=sav_prop_ft, y= sav_prop_cc))+
   geom_point() +
@@ -425,7 +425,7 @@ ggplot(veg_corr, aes(x=sav_prop_ft, y= sav_prop_cc))+
             , vjust = -0.9
   )+
   xlab("Franks Tract SAV")+
-  ylab("Clifton Court SAV ") 
+  ylab("Clifton Court SAV ")
 
 
 #SAV: Franks Tract vs Big Break
@@ -439,16 +439,16 @@ fb<-ggplot(veg_corr, aes(x=sav_prop_ft, y= sav_prop_bb))+
   geom_text(aes(label=year)
             , vjust = -0.9
   )+
-  stat_poly_eq(formula = y ~ x, 
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-               parse = TRUE) +        
+  stat_poly_eq(formula = y ~ x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               parse = TRUE) +
   xlab("Franks Tract SAV")+
   ylab("Big Break SAV ") +
   coord_cartesian(xlim = c(0,0.7), ylim = c(0, 0.7))
 
 fb_mod <- cor.test(veg_corr$sav_prop_ft,veg_corr$sav_prop_bb)
-#correlation is significant 
-#p-value = 0.009311; cor=0.6881768 
+#correlation is significant
+#p-value = 0.009311; cor=0.6881768
 
 #SAV: Franks Tract vs Clifton Court
 
@@ -459,15 +459,15 @@ fc<-ggplot(veg_corr, aes(x=sav_prop_ft, y= sav_prop_cc))+
   geom_text(aes(label=year)
             , vjust = -0.9
   )+
-  stat_poly_eq(formula = y ~ x, 
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-               parse = TRUE) + 
+  stat_poly_eq(formula = y ~ x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               parse = TRUE) +
   xlab("Franks Tract SAV")+
   ylab("Clifton Court SAV ")+
   coord_cartesian(xlim = c(0,0.7), ylim = c(0, 0.7))
 
 fc_mod <- cor.test(veg_corr$sav_prop_ft,veg_corr$sav_prop_cc)
-#correlation is significant 
+#correlation is significant
 #p-value = 0.01538; cor=0.7353165
 
 #FAV: Franks Tract vs Big Break
@@ -481,16 +481,16 @@ fbf<-ggplot(veg_corr, aes(x=fav_prop_ft, y= fav_prop_bb))+
   geom_text(aes(label=year)
             , vjust = -0.9
   )+
-  stat_poly_eq(formula = y ~ x, 
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-               parse = TRUE) +        
+  stat_poly_eq(formula = y ~ x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               parse = TRUE) +
   xlab("Franks Tract FAV")+
   ylab("Big Break FAV ")
   #coord_cartesian(xlim = c(0,0.04), ylim = c(0, 0.125))
 
 fbf_mod <- cor.test(veg_corr$fav_prop_ft,veg_corr$fav_prop_bb)
-#correlation is significant 
-#p-value = 4.738e-07; cor=0.9531752  
+#correlation is significant
+#p-value = 4.738e-07; cor=0.9531752
 
 #FAV: Franks Tract vs Clifton Court
 
@@ -501,15 +501,15 @@ fcf<-ggplot(veg_corr, aes(x=fav_prop_ft, y= fav_prop_cc))+
   geom_text(aes(label=year)
             , vjust = -0.9
   )+
-  stat_poly_eq(formula = y ~ x, 
-               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
-               parse = TRUE) + 
+  stat_poly_eq(formula = y ~ x,
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               parse = TRUE) +
   xlab("Franks Tract FAV")+
   ylab("Clifton Court FAV ")
   #coord_cartesian(xlim = c(0,0.04), ylim = c(0, 0.10))
 
 fcf_mod <- cor.test(veg_corr$fav_prop_ft,veg_corr$fav_prop_cc)
-#correlation is significant 
+#correlation is significant
 #p-value = 0.04372; cor=0.6457414
 
 sfigure <- ggarrange(fbf,fcf,
@@ -525,16 +525,16 @@ ffigure <- ggarrange(fbf,fcf,
 #correlations between SAV acreage and fluridone applications in Franks Tract----------
 
 #join veg acreages and fluridone data sets by year
-frankf <- left_join(alln,herb) %>% 
-  filter(site=="Franks Tract") %>% 
+frankf <- left_join(alln,herb) %>%
+  filter(site=="Franks Tract") %>%
   glimpse()
 
-#plot correlation between SAV acreage and fluridone quantities 
+#plot correlation between SAV acreage and fluridone quantities
 #can only compare 2014-2020 (and eventually 2021)
 #could request older treatment data from DBW
 #DBW website doesn't have reports for years I need (2004-2008)
-ggplot(frankf, aes(sav,fl_quantity_kg))+ 
-  geom_smooth(method = "lm")  + 
+ggplot(frankf, aes(sav,fl_quantity_kg))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year)
             , vjust = -0.9
@@ -544,9 +544,9 @@ ggplot(frankf, aes(sav,fl_quantity_kg))+
   ylab("Quantity of fluridone applied (kg))")
 #correlation not significant
 
-#plot correlation between SAV acreage and treatment acreage 
-(flur<-ggplot(frankf, aes(fl_area_ha,sav))+ 
-  geom_smooth(method = "lm")  + 
+#plot correlation between SAV acreage and treatment acreage
+(flur<-ggplot(frankf, aes(fl_area_ha,sav))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year)
             , vjust = -0.9
@@ -565,11 +565,11 @@ ggplot(frankf, aes(sav,fl_quantity_kg))+
 #plot correlation between SAV acreage and treatment acreage
 #2008 removed to see if relationship still significant
 
-frankf8 <- frankf %>% 
+frankf8 <- frankf %>%
   filter(year!=2008)
 
-ggplot(frankf8, aes(fl_area_ha,sav))+ 
-  geom_smooth(method = "lm")  + 
+ggplot(frankf8, aes(fl_area_ha,sav))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year)
             , vjust = -0.9
@@ -583,11 +583,11 @@ ggplot(frankf8, aes(fl_area_ha,sav))+
 #use discrete data instead (see below)
 
 #reduce acreage data set to just year and sav acreage
-frankfs <- frankf %>% 
-  select(year,sav) 
+frankfs <- frankf %>%
+  select(year,sav)
 
 #join sav acreage and wq data
-frankw <- left_join(frankfs,wq_format) %>% 
+frankw <- left_join(frankfs,wq_format) %>%
   #drop years with no WQ data
   filter(year>2014)
 
@@ -615,21 +615,21 @@ ggcorrplot(corr_matrix, method ="square", type="lower")
 #probably need to do each of the three regions separately
 
 #start by removing unneeded columns
-wrvs <- wrv %>% 
+wrvs <- wrv %>%
   select(year,site:fav,Temperature:out_mean)
 
-dfta <- wrvs %>% 
-  filter(site == "Franks Tract") 
-  
+dfta <- wrvs %>%
+  filter(site == "Franks Tract")
+
 #add herbicide data
-dft <- left_join(dfta,herb) %>% 
+dft <- left_join(dfta,herb) %>%
   #but only keep area treated
-  select(-c(fl_rate_ppb,fl_quantity_kg)) %>% 
+  select(-c(fl_rate_ppb,fl_quantity_kg)) %>%
   glimpse()
 #note we are missing treatment data for 2004-2005
-  
 
-dbb <- wrvs %>% 
+
+dbb <- wrvs %>%
   filter(site == "Big Break")
 
 #create correlation matrices
@@ -658,16 +658,17 @@ bout$parameter <- row.names(bout)
 aout <- full_join(fout,bout)
 
 #SAV: clean up output df
-vstat <- aout %>% 
+vstat <- aout %>%
   #no need to have corr of SAV with itself
   #also conductivity and salinity are perfectly correlated with each other
-  filter(parameter!="sav" & parameter!="Salinity") %>% 
+  filter(parameter!="sav" & parameter!="Salinity") %>%
   select(parameter,f_corr:f_pval,b_corr:b_pval)
 #write_csv(vstat,"EDB/sav_area_corr_discrete_wq.csv")
 
 #FAV: Extract the corr and pval from the comparisons between fav and wq parameters
 fout2 <- as.data.frame(cbind("f_corr" = f_corr_matrix[,2],"f_pval" = f_corrp_matrix[,2]))
 fout2$parameter <- row.names(fout2)
+
 
 bout2 <- as.data.frame(cbind("b_corr" = b_corr_matrix[,2],"b_pval" = b_corrp_matrix[,2]))
 bout2$parameter <- row.names(bout2)
@@ -676,17 +677,17 @@ bout2$parameter <- row.names(bout2)
 aout2 <- full_join(fout2,bout2)
 
 #FAV: clean up output df
-vstat2 <- aout2 %>% 
+vstat2 <- aout2 %>%
   #no need to have corr of SAV with itself
   #also conductivity and salinity are perfectly correlated with each other
-  filter(parameter!="fav" & parameter!="Salinity") %>% 
+  filter(parameter!="fav" & parameter!="Salinity") %>%
   select(parameter,f_corr:f_pval,b_corr:b_pval)
 #write_csv(vstat2,"EDB/fav_area_corr_discrete_wq.csv")
 
 #plot correlation between SAV acreage and EC at Big Break
 #note that EC and delta outflow are correlated so stick with outflow plot for report
-(ec<-ggplot(dbb, aes(Conductivity,sav))+ 
-    geom_smooth(method = "lm")  + 
+(ec<-ggplot(dbb, aes(Conductivity,sav))+
+    geom_smooth(method = "lm")  +
     geom_point() +
     geom_text(aes(label=year)
               , vjust = -0.9
@@ -698,8 +699,8 @@ vstat2 <- aout2 %>%
 )
 
 #plot correlation between SAV acreage and Delta outflow at Big Break
-(oflw<-ggplot(dbb, aes(out_mean,sav))+ 
-    geom_smooth(method = "lm")  + 
+(oflw<-ggplot(dbb, aes(out_mean,sav))+
+    geom_smooth(method = "lm")  +
     geom_point() +
     geom_text(aes(label=year)
               , vjust = -0.9
@@ -712,8 +713,8 @@ vstat2 <- aout2 %>%
 #ggsave(plot=oflw, "EDB/Hyperspectral_SAV_Area_v_Outflow.png",type ="cairo-png",width=8, scale=0.9, height=4.5,units="in",dpi=300)
 
 #plot correlation between FAV acreage and temperature at Big Break
-(wtemp<-ggplot(dbb, aes(Temperature,fav))+ 
-    geom_smooth(method = "lm")  + 
+(wtemp<-ggplot(dbb, aes(Temperature,fav))+
+    geom_smooth(method = "lm")  +
     geom_point() +
     geom_text(aes(label=year)
               , vjust = -0.9
@@ -733,7 +734,7 @@ vstat2 <- aout2 %>%
 #temperature, EC, secchi, outflow, herbicides
 #but EC is significantly correlated with temp and outflow
 #so just use temp, secchi, ouflow, herbicides
-#note that secchi is tricky because remote sensing's ability to detect SAV is affected 
+#note that secchi is tricky because remote sensing's ability to detect SAV is affected
 #by turbidity in addition to veg both affecting and being affected by turbidity
 #did also look at correlations between veg and DO and pH but these are responses to veg
 #rather than predictors
@@ -781,16 +782,16 @@ anova(bb_fav_mod)
 #mostly data from Big Break and Franks Tract
 
 #start by removing unneeded columns
-wrvs2 <- wrv %>% 
-  select(year,site,sav_prop,Temperature:pH) %>% 
+wrvs2 <- wrv %>%
+  select(year,site,sav_prop,Temperature:pH) %>%
   #drop clifton court because only two years of paired data
-  #filter(site!="Clifton Court") %>% 
+  #filter(site!="Clifton Court") %>%
   glimpse()
 
 
 #plot correlation between SAV acreage and conductance
-ggplot(wrvs2, aes(sav_prop,Conductivity))+ 
-  geom_smooth(method = "lm")  + 
+ggplot(wrvs2, aes(sav_prop,Conductivity))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year,col=site)
             , vjust = -0.9
@@ -801,8 +802,8 @@ ggplot(wrvs2, aes(sav_prop,Conductivity))+
 #marginally sign. corr p=0.08
 
 #plot correlation between SAV acreage and temperature
-ggplot(wrvs2, aes(sav_prop,Temperature))+ 
-  geom_smooth(method = "lm")  + 
+ggplot(wrvs2, aes(sav_prop,Temperature))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year,col=site)
             , vjust = -0.9
@@ -813,8 +814,8 @@ ggplot(wrvs2, aes(sav_prop,Temperature))+
 #no sign. corr
 
 #plot correlation between SAV acreage and secchi
-ggplot(wrvs2, aes(sav_prop,Secchi))+ 
-  geom_smooth(method = "lm")  + 
+ggplot(wrvs2, aes(sav_prop,Secchi))+
+  geom_smooth(method = "lm")  +
   geom_point() +
   geom_text(aes(label=year,col=site)
             , vjust = -0.9
