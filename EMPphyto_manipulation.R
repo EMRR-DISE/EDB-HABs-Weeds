@@ -1,5 +1,6 @@
 #another look at EMP's phytoplankton
 #some of this borrowed from Dave
+# install.packages("devtools")
 
 
 # Load packages
@@ -14,6 +15,7 @@ library(lubridate)
 library(readxl)
 library(sf)
 library(here)
+library(ggplot2)
 
 #We already did this bit, so haven't provided the raw data, but if you need it,
 #Let Rosie or Dave know.
@@ -33,7 +35,7 @@ library(here)
 # lst_phyto_recent <- map(str_subset(fp_phyto_data, "202[01]\\.xlsx$"), read_excel)
 #
 # # Import phytoplankton classification table (copied from the DroughtSynthesis repository)
- df_phyto_taxonomy <- read_excel(str_subset(fp_phyto_data, "Phyto Classification.xlsx$"))
+ df_phyto_taxonomy <- read_excel("data/Phyto Classification.xlsx")
 #
 # # Import EMP station coordinates from EDI
 df_coord_emp <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=edi.458.4&entityid=827aa171ecae79731cc50ae0e590e5af")
@@ -128,7 +130,7 @@ df_region_emp <- df_coord_emp %>%
   # Assign "Outside" to stations without region assignments
   replace_na(list(Region = "Outside"))
 
-reg3 = st_read("data/HABregions.shp")
+load("data/Regions.RData")
 
 df_region_emp <- df_coord_emp %>%
      dplyr::select(Station, Latitude, Longitude) %>%
@@ -168,13 +170,9 @@ df_phyto_taxonomy_c1 <- df_phyto_taxonomy %>%
   bind_rows(df_add_genera)
 
 # Finish cleaning up the phytoplankton data
-phyto_edb <- df_phyto_all %>%
+phyto_edb <- AllEMPphyto2022 %>%
   mutate(
-    # Create DateTime variable in PST
-    DateTime = ymd_hm(
-      paste0(Date, " ", hour(SampleTime), ":", minute(SampleTime)),
-      tz = "Etc/GMT+8"
-    ),
+
     # Fix a few erroneous Station names:
     # Stations C3A-Hood and C3A-HOOD represent station C3A,
     # Stations NZ328 and NZ542 are most likely typos and most likely represent NZ325 and NZS42
@@ -239,7 +237,8 @@ EMP_wzeros = pivot_wider(phyto_edb, id_cols = c(Station, Date, Stratum, Stratum2
 
 ggplot(EMP_wzeros, aes(x = Station, y = CountperML, fill = Genus))+ geom_col()+facet_wrap(~Month)
 
-ggplot(EMP_wzeros, aes(x = Stratum, y = CountperML, fill = AlgalType))+ geom_col()+facet_grid(Year~Month)
+ggplot(EMP_wzeros, aes(x = Stratum, y = CountperML, fill = AlgalType))+
+  geom_col()+facet_grid(Year~Month) + scale_fill_brewer(palette = "Set3")
 
 
 ######################################################
