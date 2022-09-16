@@ -17,295 +17,212 @@ theme_set(theme_bw())
 rm(list=ls())
 
 # Import NCRO data from False River near Oakley (FAL) --------------------------
-FAL <- read_csv("NCRO/HYCSV_FAL_20150101_20211117.csv",
+df_FAL <- read_csv("NCRO/HYCSV_FAL_20150101_20211117.csv",
                 skip = 3,
-                col_names = c("DateTime","Temp","Qual1","SpCond","Qual2","DO.Conc","Qual3","Chl.a","Qual4","Turb","Qual5","Key"))
-
-## Get dates to match
-FAL$DateTime <- parse_date_time(FAL$DateTime,
-                           c("mdy HM"))
-
-## Remove key column
-FAL$Key <- NULL
-
-## Pivot to long format
-FAL.long <- FAL %>%
-  pivot_longer(cols = matches("Qual"), names_to = "Type", values_to = "Qual")
-
-FAL.long$Type <- NULL
-
-## Remove low-quality data
-FAL.long <- FAL.long %>%
-  filter(Qual <= 2) ## To keep "Fair" data change to 40
-
-FAL.long$Qual <- NULL
-
-## Remove duplicate rows
-FAL.long <- FAL.long %>% distinct()
-
-## Pivot again
-FAL.clean <- FAL.long %>%
-  pivot_longer(cols = 2:6, names_to = "Analyte", values_to = "Amount")
+                col_names = c("DateTime","Temp","Qual.Temp","SpCond",
+                              "Qual.SpCond","DO.Conc","Qual.DO","Chl.a",
+                              "Qual.Chl.a","Turb","Qual.Turb","Key"),
+                id = "StationCode")
 
 # Import NCRO data from Middle River near Holt (HLT) ---------------------------
-HLT <- read_csv("NCRO/HYCSV_HLT_20150101_20211208.csv",
+df_HLT <- read_csv("NCRO/HYCSV_HLT_20150101_20211208.csv",
                 skip = 3,
-                col_names = c("DateTime","Temp","Qual1","SpCond","Qual2","Chl.a","Qual3","Turb","Qual4","Key"))
-
-## Get dates to match
-HLT$DateTime <- parse_date_time(HLT$DateTime,
-                                c("mdy HM"))
-
-## Remove key column
-HLT$Key <- NULL
-
-## Pivot to long format
-HLT.long <- HLT %>%
-  pivot_longer(cols = matches("Qual"), names_to = "Type", values_to = "Qual")
-
-HLT.long$Type <- NULL
-
-## Remove low-quality data
-HLT.long <- HLT.long %>%
-  filter(Qual <= 2) ## To keep "Fair" data change to 40
-
-HLT.long$Qual <- NULL
-
-## Remove duplicate rows
-HLT.long <- HLT.long %>% distinct()
-
-## Pivot again
-HLT.clean <- HLT.long %>%
-  pivot_longer(cols = 2:5, names_to = "Analyte", values_to = "Amount")
+                col_names = c("DateTime","Temp","Qual.Temp","SpCond",
+                              "Qual.SpCond","Chl.a","Qual.Chl.a","Turb",
+                              "Qual.Turb","Key"),
+                id = "StationCode")
 
 # Import data from Holland Cut near Bethel Island (HOL) ------------------------
-HOL <- read_csv("NCRO/HYCSV_HOL_20150101_20220119.csv",
+df_HOL <- read_csv("NCRO/HYCSV_HOL_20150101_20220119.csv",
                 skip = 3,
-                col_names = c("DateTime","Temp","Qual1","SpCond","Qual2","DO.Conc","Qual3","Turb","Qual4","Key"))
-
-## Get dates to match
-HOL$DateTime <- parse_date_time(HOL$DateTime,
-                                c("mdy HM"))
-
-## Remove key column
-HOL$Key <- NULL
-
-## Pivot to long format
-HOL.long <- HOL %>%
-  pivot_longer(cols = matches("Qual"), names_to = "Type", values_to = "Qual")
-
-HOL.long$Type <- NULL
-
-## Remove low-quality data
-HOL.long <- HOL.long %>%
-  filter(Qual <= 2) ## To keep "Fair" data change to 40
-
-HOL.long$Qual <- NULL
-
-## Remove duplicate rows
-HOL.long <- HOL.long %>% distinct()
-
-## Pivot again
-HOL.clean <- HOL.long %>%
-  pivot_longer(cols = 2:5, names_to = "Analyte", values_to = "Amount")
+                col_names = c("DateTime","Temp","Qual.Temp","SpCond",
+                              "Qual.SpCond","DO.Conc","Qual.DO","Turb",
+                              "Qual.Turb","Key"),
+                id = "StationCode")
 
 # Import Data from Old River at Quimby Island (ORQ) ----------------------------
-ORQ <- read_csv("NCRO/HYCSV_ORQ_20150101_20211208.csv",
+df_ORQ <- read_csv("NCRO/HYCSV_ORQ_20150101_20211208.csv",
                 skip = 3,
-                col_names = c("DateTime","Temp","Qual1","SpCond","Qual2","Turb","Qual3","Key"))
-
-## Get dates to match
-ORQ$DateTime <- parse_date_time(ORQ$DateTime,
-                                c("mdy HM"))
-
-## Remove key column
-ORQ$Key <- NULL
-
-## Pivot to long format
-ORQ.long <- ORQ %>%
-  pivot_longer(cols = matches("Qual"), names_to = "Type", values_to = "Qual")
-
-ORQ.long$Type <- NULL
-
-## Remove low-quality data
-ORQ.long <- ORQ.long %>%
-  filter(Qual <= 2) ## To keep "Fair" data change to 40
-
-ORQ.long$Qual <- NULL
-
-## Remove duplicate rows
-ORQ.long <- ORQ.long %>% distinct()
-
-## Pivot again
-ORQ.clean <- ORQ.long %>%
-  pivot_longer(cols = 2:4, names_to = "Analyte", values_to = "Amount")
+                col_names = c("DateTime","Temp","Qual.Temp","SpCond",
+                              "Qual.SpCond","Turb","Qual.Turb","Key"),
+                id = "StationCode")
 
 # Import data from Old River near Franks Tract (OSJ) ---------------------------
-OSJ <- read_csv("NCRO/HYCSV_OSJ_20150101_20220106.csv",
+df_OSJ <- read_csv("NCRO/HYCSV_OSJ_20150101_20220106.csv",
                 skip = 3,
-                col_names = c("DateTime","Temp","Qual1","SpCond","Qual2","DO.Conc","Qual3","Chl.a","Qual4","Turb","Qual5","Key"))
+                col_names = c("DateTime","Temp","Qual.Temp","SpCond",
+                              "Qual.SpCond","DO.Conc","Qual.DO","Chl.a",
+                              "Qual.Chl.a","Turb","Qual.Turb","Key"),
+                id = "StationCode")
 
-## Get dates to match
-OSJ$DateTime <- parse_date_time(OSJ$DateTime,
-                                c("mdy HM"))
+df_WQ <- bind_rows(df_FAL,df_HLT,df_HOL,df_ORQ,df_OSJ)
 
-## Remove key column
-OSJ$Key <- NULL
+print(unique(df_WQ$StationCode))
 
-# Pivot to long format
-OSJ.long <- OSJ %>%
-  pivot_longer(cols = matches("Qual"), names_to = "Type", values_to = "Qual")
+# Replace file names with actual StationCodes
+df_WQ$StationCode <- gsub("NCRO/HYCSV_FAL_20150101_20211117.csv", "FAL", df_WQ$StationCode)
+df_WQ$StationCode <- gsub("NCRO/HYCSV_HLT_20150101_20211208.csv", "HLT", df_WQ$StationCode)
+df_WQ$StationCode <- gsub("NCRO/HYCSV_HOL_20150101_20220119.csv", "HOL", df_WQ$StationCode)
+df_WQ$StationCode <- gsub("NCRO/HYCSV_ORQ_20150101_20211208.csv", "ORQ", df_WQ$StationCode)
+df_WQ$StationCode <- gsub("NCRO/HYCSV_OSJ_20150101_20220106.csv", "OSJ", df_WQ$StationCode)
 
-OSJ.long$Type <- NULL
+# Check that station IDs are fixed
+print(unique(df_WQ$StationCode))
 
-# Remove low-quality data
-OSJ.long <- OSJ.long %>%
-  filter(Qual <= 2) ## To keep "Fair" data change to 40
+# Get dates to match
+df_WQ$DateTime <- mdy_hm(df_WQ$DateTime)
 
-OSJ.long$Qual <- NULL
+# Remove key column
+df_WQ$Key <- NULL
 
-## Remove duplicate rows
-OSJ.long <- OSJ.long %>% distinct()
+# Remove bad quality NCRO Data -------------------------------------------------
 
-## Pivot again
-OSJ.clean <- OSJ.long %>%
-  pivot_longer(cols = 2:6, names_to = "Analyte", values_to = "Amount")
+df_WQ_data <- df_WQ %>%
+  select(StationCode:Temp,SpCond,DO.Conc,Chl.a,Turb)
+
+df_WQ_qual <- df_WQ %>%
+  select(StationCode:DateTime,Qual.Temp,Qual.SpCond,Qual.DO,Qual.Chl.a,Qual.Turb)
+
+df_WQ_qual <- df_WQ_qual %>%
+  rename("Temp" = "Qual.Temp") %>%
+  rename("SpCond" = "Qual.SpCond") %>%
+  rename("DO.Conc" = "Qual.DO") %>%
+  rename("Chl.a" = "Qual.Chl.a") %>%
+  rename("Turb" = "Qual.Turb")
+
+df_WQ_data <- df_WQ_data %>%
+  pivot_longer(
+    cols = Temp:Turb,
+    names_to = "Analyte",
+    values_to = "Conc"
+  )
+
+df_WQ_qual <- df_WQ_qual %>%
+  pivot_longer(
+    cols = c(Temp:Turb),
+    names_to = "Analyte",
+    values_to = "Qual.Score"
+  )
+
+df_WQ <- left_join(df_WQ_data,df_WQ_qual)
+
+rm(df_WQ_data)
+rm(df_WQ_qual)
+
+# Quality score table for NCRO data
+# 1 = Good quality data
+# 2 = Good quality edited data
+# 40 = Fair measurement
+# 151 = Data missing
+# 161 = Below Rating, no flow calculated
+# 170 = Unreliable data
+# 255 = no data exists
+
+# Evaluate how many samples were below quality thresholds
+table(df_WQ$Qual.Score)
+
+# Filter out low-quality or missing data (keep good and fair)
+
+df_WQ <- df_WQ %>% filter(Qual.Score <= 40)
+
+# Remove Qual Score column
+df_WQ <- df_WQ %>% select(StationCode:Conc)
 
 # Import NCRO data from MDM ----------------------------------------------------
-MDM <- read_csv("NCRO/MDM_2015_2022.csv",
+df_MDM <- read_csv("NCRO/MDM_2015_2022.csv",
                 skip = 1,
-                col_names = c("DateTime","Chl.a","Flow","SpCond","Temp","Turb"))
+                col_names = c("DateTime","Chl.a","Flow","SpCond","Temp","Turb"),
+                id = "StationCode")
+
+df_MDM$StationCode <- gsub("NCRO/MDM_2015_2022.csv", "MDM", df_MDM$StationCode)
 
 ## Pivot
-MDM.clean <- MDM %>%
-  pivot_longer(cols = 2:6, names_to = "Analyte", values_to = "Amount")
+df_MDM <- df_MDM %>%
+  pivot_longer(cols = Chl.a:Turb,
+               names_to = "Analyte",
+               values_to = "Conc")
+
+df_WQ <- bind_rows(df_WQ, df_MDM)
+
+# Remove individual dfs
+rm(df_FAL)
+rm(df_HLT)
+rm(df_HOL)
+rm(df_MDM)
+rm(df_ORQ)
+rm(df_OSJ)
 
 # Import EMP data from Franks Tract (FRK) --------------------------------------
 # QA'd historical data from Andrew Tran
-DO <- read_csv("EMP/FRK_data/FRK_DissolvedOxygen.csv", col_select = c(-...1, -station))
-pH <- read_csv("EMP/FRK_data/FRK_pH.csv", col_select = c(-...1, -station))
-Temp <- read_csv("EMP/FRK_data/FRK_WaterTemperature.csv", col_select = c(-...1, -station))
-SpC <- read_csv("EMP/FRK_data/FRK_SpC.csv", col_select = c(-...1, -station))
-Turb <- read_csv("EMP/FRK_data/FRK_Turbidity.csv", col_select = c(-...1, -station))
-Chl <- read_csv("EMP/FRK_data/FRK_Fluorescence.csv", col_select = c(-...1, -station))
 
-# Import QA'd 2021 data from A. Tran
-DO.2021 <- read_csv("EMP/2021/FRK_DissolvedOxygen.csv", col_select = c(-...1, -station))
-pH.2021 <- read_csv("EMP/2021/FRK_pH.csv", col_select = c(-...1, -station))
-Temp.2021 <- read_csv("EMP/2021/FRK_WaterTemperature.csv", col_select = c(-...1, -station))
-SpC.2021 <- read_csv("EMP/2021/FRK_SpC.csv", col_select = c(-...1, -station))
-Turb.2021 <- read_csv("EMP/2021/FRK_Turbidity.csv", col_select = c(-...1, -station))
-Chl.2021 <- read_csv("EMP/2021/FRK_Fluorescence.csv", col_select = c(-...1, -station))
+# Import EMP data files
+files_EMP <- dir(path = "EMP/FRK_data/", pattern = "\\.csv", full.names = T)
 
-## Combine datasets for each analyte
-DO <- dplyr::bind_rows(DO, DO.2021)
-pH <- dplyr::bind_rows(pH, pH.2021)
-Temp <- dplyr::bind_rows(Temp, Temp.2021)
-SpC <- dplyr::bind_rows(SpC, SpC.2021)
-Turb <- dplyr::bind_rows(Turb, Turb.2021)
-Chl <- dplyr::bind_rows(Chl, Chl.2021)
+df_EMP <- map_dfr(files_EMP, ~read_csv(.x))
 
-## Remove duplicates
-DO <- DO %>% distinct()
-pH <- pH %>% distinct()
-Temp <- Temp %>% distinct()
-SpC <- SpC %>% distinct()
-Turb <- Turb %>% distinct()
-Chl <- Chl %>% distinct()
+# Import EMP data files from 2021
+files_EMP_2021 <- dir(path = "EMP/2021/", pattern = "\\.csv", full.names = T)
 
-## Import list of dates only
-dates <- as_tibble(unique(pH$time)) %>%
-  rename("time" = "value")
+df_EMP_2021 <- map_dfr(files_EMP_2021, ~read_csv(.x))
 
-## Remove X-flagged data
-DO <- DO %>% filter(DO$qaqc_flag_id != "X")
-pH <- pH %>% filter(pH$qaqc_flag_id != "X")
-Temp <- Temp %>% filter(Temp$qaqc_flag_id != "X")
-SpC <- SpC %>% filter(SpC$qaqc_flag_id != "X")
-Turb <- Turb %>% filter(Turb$qaqc_flag_id != "X")
-Chl <- Chl %>% filter(Chl$qaqc_flag_id != "X")
+# Combine historical and 2021 data
+df_EMP <- bind_rows(df_EMP,df_EMP_2021)
+rm(df_EMP_2021)
 
-## Combined all data into one
-FRK <- left_join(dates, DO[2:3]) %>%
-  rename("DO.Conc" = "value")
+# Remove duplicates
+df_EMP <- df_EMP %>% distinct()
 
-FRK <- left_join(FRK, pH[2:3]) %>%
-  rename("pH" = "value")
+# Remove X-flagged data
+df_EMP <- df_EMP %>% filter(df_EMP$qaqc_flag_id != "X")
 
-FRK <- left_join(FRK, Temp[2:3]) %>%
-  rename("Temp" = "value")
+# Remove unit and QA/QC column
+df_EMP <- df_EMP %>% select(station:value)
 
-FRK <- left_join(FRK, SpC[2:3]) %>%
-  rename("SpCond" = "value")
+## Rename headers
+df_EMP <- df_EMP %>%
+  rename("DateTime" = "time") %>%
+  rename("Analyte" = "parameter") %>%
+  rename("Conc" = "value") %>%
+  rename("StationCode" = "station")
 
-FRK <- left_join(FRK, Turb[2:3]) %>%
-  rename("Turb" = "value")
-
-FRK <- left_join(FRK, Chl[2:3]) %>%
-  rename("Chl.a" = "value")
-
-## Rename date column
-FRK <- FRK %>% rename ("DateTime" = "time")
-
-## Pivot
-FRK.clean <- FRK %>%
-  pivot_longer(cols = 2:7, names_to = "Analyte", values_to = "Amount")
+# Add column with StationCode for FRK
+df_EMP <- df_EMP %>% mutate("StationCode" = "FRK")
 
 ## Bind all tibbles together into a single data frame
 ## Use .id to give a new column with original site name
 
-WQ <- bind_rows("HOL" = HOL.clean,
-                  "ORQ" = ORQ.clean,
-                  "FAL" = FAL.clean,
-                  "FRK" = FRK.clean,
-                  "HLT" = HLT.clean,
-                  "MDM" = MDM.clean,
-                  "OSJ" = OSJ.clean,
-                  .id = "Site")
+df_WQ <- bind_rows(df_WQ,df_EMP)
 
 ## Add column of just the date for grouping
-WQ <- WQ %>%
-  mutate(Date = date(WQ$DateTime))
+df_WQ <- df_WQ %>% mutate(Date = date(df_WQ$DateTime))
 
 ## Remove 2022 data
-WQ <- WQ %>% filter(Date <= "2021-12-31")
+df_WQ <- df_WQ %>% filter(Date <= "2021-12-31")
 
 ## Calculate daily mean
-WQ.daily <- WQ %>%
-  group_by(Site, Date, Analyte) %>%
-  summarise(Daily.Mean = mean(Amount, na.rm = TRUE),
-            Daily.Max = max(Amount, na.rm = TRUE),
-            Daily.Min = min(Amount, na.rm = TRUE)) %>%
+df_WQ_daily <- df_WQ %>%
+  group_by(StationCode, Date, Analyte) %>%
+  summarise(Daily.Mean = mean(Conc, na.rm = TRUE)) %>%
   ungroup
-
-## Remove infinite min values from days with no data
-WQ.daily <- WQ.daily %>% filter(!is.infinite(Daily.Min))
-WQ.daily <- WQ.daily %>% filter(!is.infinite(Daily.Max))
 
 ## Add column of just the year for highlighting yearly data
 ## Add Julian date for plotting
-WQ.daily <- WQ.daily %>%
-  mutate(Year = year(WQ.daily$Date)) %>%
-  mutate(Julian = yday(WQ.daily$Date)) %>%
-  mutate(Date = date(WQ.daily$Date)) %>%
-  mutate(month2 = month(WQ.daily$Date))
-
-## Convert month numbers into text months (e.g., Jan, Feb, Mar)
-## and append as a column named month3
-WQ.daily <- WQ.daily %>%
-  mutate(Month = month(WQ.daily$month2, label=TRUE))
+df_WQ_daily <- df_WQ_daily %>%
+  mutate(Year = year(df_WQ_daily$Date)) %>%
+  mutate(Julian = yday(df_WQ_daily$Date)) %>%
+  mutate(Date = date(df_WQ_daily$Date)) %>%
+  mutate(Month = month(df_WQ_daily$Date), label = TRUE)
 
 ## Order month 3 in calendar order rather than (default) alphabetical
-WQ.daily$Month = factor(WQ.daily$Month, levels = month.abb)
-WQ.daily$month2 <- NULL
+df_WQ_daily$Month = factor(df_WQ_daily$Month, levels = month.abb)
 
 ## Save RData files
-save(WQ, file = "WQ.RData")
-save(WQ.daily, file = "WQ.daily.RData")
+save(df_WQ, file = "df_WQ.RData")
+save(df_WQ_daily, file = "df_WQ_daily.RData")
 
 ## Example plots
-plot.WQ.mean <- ggplot(WQ.daily) +
-  geom_line(data = subset(WQ.daily, Analyte == "pH"),
+plot_WQ_mean <- ggplot(df_WQ_daily) +
+  geom_line(data = subset(df_WQ_daily, Analyte == "pH" & Year == "2021"),
              aes(x = Julian, y = Daily.Mean, color = as.factor(Year)),
              size = 1) +
   scale_x_continuous(breaks = c(1,60,121,182,244,305, 366),
@@ -315,7 +232,7 @@ plot.WQ.mean <- ggplot(WQ.daily) +
        fill = "Year",
        title = "Daily Mean pH (2015-2021)")
 
-plot.WQ.mean +
+plot_WQ_mean +
   theme(panel.background = element_rect(fill = "white", linetype = 0)) +
   theme(panel.grid.minor = element_blank()) +
   scale_color_brewer(palette = "Set2", name = "Year")
@@ -329,25 +246,3 @@ ggsave(path="plots",
        height=5,
        width=6.5,
        dpi="print")
-
-## Make tables for FRK
-## Calculate daily mean
-WQ.monthly <- WQ %>%
-  mutate(Year = year(WQ$DateTime)) %>%
-  mutate(Julian = yday(WQ$DateTime)) %>%
-  mutate(Date = date(WQ$DateTime)) %>%
-  mutate(month2 = month(WQ$DateTime))
-
-## Convert month numbers into text months (e.g., Jan, Feb, Mar)
-## and append as a column named month3
-WQ.monthly <- WQ.monthly %>%
-  mutate(Month = month(WQ.monthly$month2, label=TRUE))
-
-WQ.monthly <- WQ.monthly %>%
-  group_by(Site, Year, Month, Analyte) %>%
-  summarise(Monthly.Mean = mean(Amount, na.rm = TRUE),
-            Monthly.Max = max(Amount, na.rm = TRUE),
-            Monthly.Min = min(Amount, na.rm = TRUE)) %>%
-  ungroup
-
-write_csv(WQ.monthly, file = "WQ.monthly.csv")
