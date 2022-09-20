@@ -294,11 +294,14 @@ plot_DO_mean <- ggplot(df_WQ_daily) +
   geom_line(data = subset(df_WQ_daily,
                           Analyte == "DO.Conc" & StationCode == station & Year == "2021"),
             aes(x = Julian, y = Daily.Mean, color = Analyte),
+            show.legend = FALSE,
             size = 1) +
   scale_x_continuous(breaks = c(1,60,121,182,244,305, 366),
                      labels = c("Jan","Mar","May","Jul","Sep","Nov","Jan")) +
+  ylim(c(7,16)) +
   labs(x = NULL,
-       y = "Dissolved Oxygen")
+       y = NULL,
+       fill = NULL)
 
 plot_DO_mean +
   theme(panel.background = element_rect(fill = "white", linetype = 0)) +
@@ -306,12 +309,12 @@ plot_DO_mean +
   scale_color_brewer(palette = "Set2")
 
 ggsave(path="plots",
-       filename = paste0(station,"_DO_2021.pdf"),
+       filename = paste0("DO_2021_",station,".pdf"),
        device = "pdf",
        scale=1.0,
        units="in",
-       height=5,
-       width=6.5,
+       height=2,
+       width=3,
        dpi="print")
 
 }
