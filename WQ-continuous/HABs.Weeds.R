@@ -271,7 +271,7 @@ plot_WQ_mean <- ggplot(df_WQ_daily) +
 plot_WQ_mean +
   theme(panel.background = element_rect(fill = "white", linetype = 0)) +
   theme(panel.grid.minor = element_blank()) +
-  scale_color_brewer(palette = "Set1", name = "Year") +
+  scale_color_brewer(palette = "Set1") +
   facet_wrap(Year ~ ., ncol = 4, scale = "free_y")
 
 ggsave(path="plots",
@@ -284,3 +284,35 @@ ggsave(path="plots",
        dpi="print")
 
 }
+
+# Plot 2021 DO to overlay on map -----------------------------------------------
+stations <- unique(df_WQ$StationCode)
+
+for (station in stations) {
+
+plot_DO_mean <- ggplot(df_WQ_daily) +
+  geom_line(data = subset(df_WQ_daily,
+                          Analyte == "DO.Conc" & StationCode == station & Year == "2021"),
+            aes(x = Julian, y = Daily.Mean, color = Analyte),
+            size = 1) +
+  scale_x_continuous(breaks = c(1,60,121,182,244,305, 366),
+                     labels = c("Jan","Mar","May","Jul","Sep","Nov","Jan")) +
+  labs(x = NULL,
+       y = "Dissolved Oxygen")
+
+plot_DO_mean +
+  theme(panel.background = element_rect(fill = "white", linetype = 0)) +
+  theme(panel.grid.minor = element_blank()) +
+  scale_color_brewer(palette = "Set2")
+
+ggsave(path="plots",
+       filename = paste0(station,"_DO_2021.pdf"),
+       device = "pdf",
+       scale=1.0,
+       units="in",
+       height=5,
+       width=6.5,
+       dpi="print")
+
+}
+
