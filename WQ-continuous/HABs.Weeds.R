@@ -5,7 +5,6 @@ library(tidyverse)
 library(lubridate)
 library(timetk)
 
-
 # Set working directory
 setwd("./WQ-continuous")
 getwd()
@@ -178,7 +177,7 @@ df_EMP <- df_EMP %>% filter(df_EMP$qaqc_flag_id != "X")
 # Remove unit and QA/QC column
 df_EMP <- df_EMP %>% select(station:value)
 
-## Rename headers
+# Rename headers
 df_EMP <- df_EMP %>%
   rename("DateTime" = "time") %>%
   rename("Analyte" = "parameter") %>%
@@ -188,61 +187,100 @@ df_EMP <- df_EMP %>%
 # Add column with StationCode for FRK
 df_EMP <- df_EMP %>% mutate("StationCode" = "FRK")
 
-## Bind all tibbles together into a single data frame
-## Use .id to give a new column with original site name
+# Rename Analytes to match those in NCRO
+unique(df_EMP$Analyte)
+unique(df_WQ$Analyte)
+
+df_EMP$Analyte <- gsub("DissolvedOxygen","DO.Conc", df_EMP$Analyte)
+df_EMP$Analyte <- gsub("Fluorescence","Chl.a", df_EMP$Analyte)
+df_EMP$Analyte <- gsub("SpC","SpCond", df_EMP$Analyte)
+df_EMP$Analyte <- gsub("Turbidity","Turb", df_EMP$Analyte)
+df_EMP$Analyte <- gsub("WaterTemperature","Temp", df_EMP$Analyte)
+
+# Bind all tibbles together into a single data frame
+# Use .id to give a new column with original site name
 
 df_WQ <- bind_rows(df_WQ,df_EMP)
 
-## Add column of just the date for grouping
+# Add column of just the date for grouping
 df_WQ <- df_WQ %>% mutate(Date = date(df_WQ$DateTime))
 
-## Remove 2022 data
+# Remove 2022 data
 df_WQ <- df_WQ %>% filter(Date <= "2021-12-31")
 
-## Calculate daily mean
+# Calculate daily mean
 df_WQ_daily <- df_WQ %>%
   group_by(StationCode, Date, Analyte) %>%
   summarise(Daily.Mean = mean(Conc, na.rm = TRUE)) %>%
   ungroup
 
-## Add column of just the year for highlighting yearly data
-## Add Julian date for plotting
+# Add column of just the year for highlighting yearly data
+# Add Julian date for plotting
 df_WQ_daily <- df_WQ_daily %>%
   mutate(Year = year(df_WQ_daily$Date)) %>%
   mutate(Julian = yday(df_WQ_daily$Date)) %>%
   mutate(Date = date(df_WQ_daily$Date)) %>%
   mutate(Month = month(df_WQ_daily$Date), label = TRUE)
 
-## Order month 3 in calendar order rather than (default) alphabetical
+# Order month 3 in calendar order rather than (default) alphabetical
 df_WQ_daily$Month = factor(df_WQ_daily$Month, levels = month.abb)
 
-## Save RData files
+# Save RData files
 save(df_WQ, file = "df_WQ.RData")
 save(df_WQ_daily, file = "df_WQ_daily.RData")
 
-## Example plots
+# Plot pH at FRK over course of record -----------------------------------------
 plot_WQ_mean <- ggplot(df_WQ_daily) +
-  geom_line(data = subset(df_WQ_daily, Analyte == "pH" & Year == "2021"),
+  geom_line(data = subset(df_WQ_daily, Analyte == "pH"),
              aes(x = Julian, y = Daily.Mean, color = as.factor(Year)),
              size = 1) +
   scale_x_continuous(breaks = c(1,60,121,182,244,305, 366),
                      labels = c("Jan","Mar","May","Jul","Sep","Nov","Jan")) +
   labs(x = NULL,
        y = "pH",
-       fill = "Year",
-       title = "Daily Mean pH (2015-2021)")
+       fill = "Year")
 
 plot_WQ_mean +
   theme(panel.background = element_rect(fill = "white", linetype = 0)) +
   theme(panel.grid.minor = element_blank()) +
   scale_color_brewer(palette = "Set2", name = "Year")
-  #facet_wrap(Year ~ ., ncol = 3, dir = "h", scales = "free_y")
 
 ggsave(path="plots",
-       filename = "pH_by_year.png",
+       filename = "pH_FRK_by_year.png",
        device = "png",
        scale=1.0,
        units="in",
        height=5,
        width=6.5,
        dpi="print")
+
+# Plot Temp at all stations over course of record faceted by year --------------
+analytes <- unique(df_WQ$Analyte)
+
+for (analyte in analytes) {
+
+plot_WQ_mean <- ggplot(df_WQ_daily) +
+  geom_line(data = subset(df_WQ_daily, Analyte == analyte),
+            aes(x = Julian, y = Daily.Mean, color = as.factor(StationCode)),
+            size = 1) +
+  scale_x_continuous(breaks = c(1,60,121,182,244,305, 366),
+                     labels = c("J","M","M","J","S","N","J")) +
+  labs(x = NULL,
+       y = paste0(analyte))
+
+plot_WQ_mean +
+  theme(panel.background = element_rect(fill = "white", linetype = 0)) +
+  theme(panel.grid.minor = element_blank()) +
+  scale_color_brewer(palette = "Set1", name = "Year") +
+  facet_wrap(Year ~ ., ncol = 4, scale = "free_y")
+
+ggsave(path="plots",
+       filename = paste0(analyte,"_by_year_free_y.pdf"),
+       device = "pdf",
+       scale=1.0,
+       units="in",
+       height=4,
+       width=6.5,
+       dpi="print")
+
+}
