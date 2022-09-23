@@ -1,6 +1,6 @@
-## Cleaning and joining FluoroProbe and MOPED data, then generating a map
-## 
-## 8/25/22 TMF
+## Create a map of continuous WQ stations for HABs/Weeds Report
+##
+## 9/23/22 TMF
 
 library(tidyverse)
 library(deltamapr)
@@ -16,7 +16,7 @@ getwd()
 theme_set(theme_bw())
 
 # Clean workspace
-rm(list=ls()) 
+rm(list=ls())
 
 # Read in station GPS data
 df_stations <- read_csv("continuous_WQ_stations.csv")
@@ -28,8 +28,8 @@ cities$long <- cities$long
 
 # Plot map of continuous station locations -------------------------------------
 
-plot <- ggplot(WW_Delta) + 
-  geom_sf(fill = "lightblue") + 
+plot <- ggplot(WW_Delta) +
+  geom_sf(fill = "lightblue") +
   geom_point(data = df_stations,
              aes(x = Longitude,
                  y = Latitude,
@@ -40,13 +40,13 @@ plot <- ggplot(WW_Delta) +
   geom_point(data = cities %>% arrange(pop) %>% tail(500),
              aes(x = long,
                  y = lat)) +
-  geom_text_repel(data = cities %>% arrange(pop) %>% tail(500), 
+  geom_text_repel(data = cities %>% arrange(pop) %>% tail(500),
                   aes(x = long,
-                      y = lat, 
+                      y = lat,
                       label = name)) +
   #scale_y_continuous() +
-  ylim(37.9, 38.2) +
-  xlim(-121.9, -121.3) +
+  ylim(38.0, 38.1) +
+  xlim(-121.7, -121.5) +
   theme_bw()
 
 plot + labs(x = "Longitude",
@@ -54,12 +54,12 @@ plot + labs(x = "Longitude",
   guides(size = "none")
 
 ggsave(path="plots",
-       filename = "map_continuous_WQ_stations.pdf", 
+       filename = "map_continuous_WQ_stations_2.pdf",
        device = "pdf",
-       scale=1.0, 
+       scale=1.0,
        units="in",
        height=4,
-       width=6.5, 
+       width=6.5,
        dpi="print")
 
 
