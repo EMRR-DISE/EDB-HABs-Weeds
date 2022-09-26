@@ -3,53 +3,69 @@
 library(cder)
 library(tidyverse)
 library(lubridate)
+library(dataRetrieval)
+
+flowdata = readNWISdata(sites = c("11313452","11455315", "11337190", "11312685", "11455420"),
+                        service = "iv", parameterCd = "72255", startDate = "2014-01-01T00:00", endDate = "2021-12-31T00:00")
+save(flowdata, file="flowdata.RData")
+
+#attach station names and rename things
+stas = data.frame(site_no = c("11313452","11455315", "11337190", "11312685", "11455420"),
+                  Station = c("Old R at Franks", "Liberty Isld","Jersey Point","Middle R at Holt", "Rio Vista" ))
 
 
-flowdata = cdec_query(c("SRV", "LIB", "SJC", "RYF", "C31", "SJJ", "GES", "HOL"), c(20, 21), "E", ymd("2010-01-01"), ymd("2021-12-31"))
+flowdata = rename(flowdata, Velocity = X_72255_00000) %>%
+  left_join(stas)
+
+#flowdata = cdec_query(c("SRV", "LIB", "SJC", "RYF", "C31", "SJJ", "GES", "HOL"), c(20, 21), "E", ymd("2010-01-01"), ymd("2021-12-31"))
 Outflow = cdec_query(c("DTO"), c(23), "D", ymd("2010-01-01"), ymd("2021-12-31")) %>%
   mutate(Date = date(DateTime), Year = year(Date), Month = month(Date), StationID = NULL) %>%
   rename(Outflow = Value)
 
 Flowmean = flowdata %>%
-  filter(!is.na(Value), Value < 100000) %>%
-  mutate(Date = date(DateTime)) %>%
-  group_by(Date, StationID, SensorType) %>%
-  summarise(Mean = mean(Value, an.rm = T), Max = max(Value, na.rm = T), Min = min(Value, na.rm = T))
+  #filter(!is.na(Velocity), Value < 100000) %>%
+  mutate(Date = date(dateTime)) %>%
+  group_by(Date, Station) %>%
+  summarise(Mean = mean(Velocity, na.rm = T), Max = max(Velocity, na.rm = T), Min = min(Velocity, na.rm = T),
+            MaxVel = max(abs(Max), abs(Min)))
 
-Flow2 = pivot_wider(Flowmean, id_cols = c(Date, StationID), names_from = SensorType, values_from = Mean)
-Flow3 = pivot_wider(Flowmean, id_cols = c(Date, StationID), names_from = SensorType, values_from = Max, names_prefix = "Max")
-Flow4 = pivot_wider(Flowmean, id_cols = c(Date, StationID), names_from = SensorType, values_from = Min, names_prefix = "Min")
-Flow = left_join(Flow2, Flow3) %>%
-  left_join(Flow4) %>%
-  left_join(Outflow)
+Flow = left_join(Flowmean, Outflow)
 
-Flow = mutate(Flow, MaxVel = max(abs(MinVLOCITY), abs(MaxVLOCITY)), Year = year(Date), Month = month(Date)) %>%
-  filter(MaxVel < 5, FLOW > -10000, !(StationID == "RYF" & FLOW > 20000),
-         !(StationID == "SJC" & MaxVel > 2)) %>%
-  mutate(Season = case_when(Month %in% c(12,1,2) ~ "Winter",
+ggplot(Flow, aes(x = Date, y = Mean)) + geom_point()+facet_wrap(~Station)
+
+Flow = Flow %>%
+  mutate(Month = month(Date), Season = case_when(Month %in% c(12,1,2) ~ "Winter",
                             Month %in% c(3,4,5) ~ "Spring",
                             Month %in% c(6,7,8) ~ "Summer",
-                            Month %in% c(9,10,11) ~ "Fall")) %>%
+                            Month %in% c(9,10,11) ~ "Fall"),
+         Season = factor(Season, levels = c("Spring", "Summer", "Fall", "Winter"))) %>%
   filter(Outflow < 200000)
 
-ggplot(Flow, aes(x= FLOW, y = MaxVel))+ geom_point()+ geom_smooth() + facet_wrap(~StationID, scales = "free")            
-ggplot(Flow, aes(x= Outflow, y = MaxVel))+ geom_point()+ geom_smooth() + facet_wrap(~StationID, scales = "free")            
+ggplot(Flow, aes(x= Outflow, y = MaxVel))+ geom_point()+ geom_smooth() + facet_wrap(~Station, scales = "free")
 
-ggplot(filter(Flow, StationID != "SJJ"), aes(x= Outflow, y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() + 
-  facet_grid(StationID~Season, scales = "free") +
-  ylab("Daily Maximum current speed")+ xlab("Daily Mean Delta OutFlow") 
+ggplot(Flow, aes(x= Outflow, y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() +
+  facet_grid(Station~Season, scales = "free") +
+  ylab("Daily Maximum current speed")+ xlab("Daily Mean Delta OutFlow")
 
-ggplot(filter(Flow, StationID != "SJJ"), aes(x= log(Outflow), y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() + 
-  facet_grid(StationID~Season, scales = "free") +
-  ylab("Daily Maximum current speed")+ xlab("Log Daily Mean Delta OutFlow") 
+TUCO = data.frame(Outflow = c(3000, 4000), Scenario = c("TUCO", "D1641"), Season = c("Summer", "Summer")) %>%
+  mutate(Season = factor(Season, levels = c("Spring", "Summer", "Fall", "Winter")))
+
+ggplot(Flow, aes(x= log(Outflow), y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() +
+  facet_grid(Station~Season, scales = "free") +
+  geom_vline(data = TUCO, aes(xintercept = log(Outflow), linetype = Scenario))+
+  scale_color_brewer(palette = "Set2", name = NULL)+ theme_bw()+ theme(legend.position = "bottom")+
+  ylab("Daily Maximum current speed (m/sec)")+ xlab("Log Daily Mean Delta OutFlow (CFS)")
+
+ggsave("VelocityPlot.tiff", device = "tiff", width = 7, height = 7)
 
 
-summerFlow = filter(Flow, Month %in% c(6,7,8), StationID != "SJJ", FLOW < 10000, Outflow < 100000)
-ggplot(summerFlow, aes(x= FLOW, y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() + facet_wrap(~StationID, scales = "free") +
+summerFlow = filter(Flow, Month %in% c(6,7,8))
+ggplot(summerFlow, aes(x= log(Outflow), y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+
+  geom_smooth() + facet_wrap(~Station) +
   ylab("Daily Maximum current speed")+ xlab("Daily Mean Flow")
-ggplot(summerFlow, aes(x= Outflow, y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() + facet_wrap(~StationID, scales = "free") 
+ggplot(summerFlow, aes(x= Outflow, y = MaxVel))+ geom_point(aes(color = as.factor(Year)))+ geom_smooth() + facet_wrap(~StationID, scales = "free")
 
-ggplot(summerFlow, aes(x= Outflow, y = MaxVel))+ geom_point()+#geom_point(aes(color = as.factor(Year)))+ 
+ggplot(summerFlow, aes(x= Outflow, y = MaxVel))+ geom_point()+#geom_point(aes(color = as.factor(Year)))+
   geom_smooth() + facet_wrap(~StationID, scales = "free") +
   xlim(0, 10000) + ylab("Daily Maximum current speed")+ xlab("Daily Mean Delta Outflow")
 

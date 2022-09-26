@@ -108,6 +108,7 @@ priority2022 = bind_rows(June_2022, July_2022) %>%
 MicTows = filter(priority2022, str_detect(`Full Code`, "Microcystis"))
 priority2022a = filter(priority2022, !str_detect(`Full Code`, "Microcystis"))
 
+
 phyto_edbtemp = read_csv("data/AllEMPphyto.csv") %>%
   select(-Stratum, -Stratum2, -AlgalType, -...1)
 #bind to the rest of the data
@@ -214,7 +215,7 @@ phyto_edb <- AllEMPphyto2022 %>%
 
 write.csv(phyto_edb, file = "data/AllEMPphyto.csv")
 
-
+save(phyto_edb, MicTows, file = "EMPPHyto.RData")
 #######################################################
 
 phyto_edb = read_csv("data/AllEMPphyto.csv")
