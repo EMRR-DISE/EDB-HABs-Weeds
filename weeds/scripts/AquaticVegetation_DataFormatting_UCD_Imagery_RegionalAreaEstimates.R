@@ -213,7 +213,7 @@ vmetrics <- list_df %>%
 stm <- as.data.frame(
   cbind(
     agency = c("DFW","DWR","DWR")
-    ,station = c("Baystudy 853", "EMP C9", "EMP D19")
+    ,station = c("853", "C9", "D19")
     , site = c("Big Break","Clifton Court","Franks Tract")
   )
 )
