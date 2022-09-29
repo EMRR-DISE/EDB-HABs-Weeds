@@ -29,26 +29,26 @@ library(ggpmisc) #add equations and R^2 to plots
 #area estimates for the three regions
 
 #2004-2008, 2014-2015, 2019-2020
-cc <- read_csv("weeds_regional_area_estimates/CliftonCourt_wgs84_area_ha.csv")%>%
+cc <- read_csv("./weeds/data/ucd_hyperspectral_regional_area_estimates/CliftonCourt_wgs84_area_ha.csv")%>%
   add_column("site" = as.factor("Clifton Court"))
 
 #2004-2008, 2014-2020
-ft <- read_csv("weeds_regional_area_estimates/FranksTract_wgs84_area_ha.csv")%>%
+ft <- read_csv("./weeds/data/ucd_hyperspectral_regional_area_estimates/FranksTract_wgs84_area_ha.csv")%>%
   add_column("site" = as.factor("Franks Tract"))
 
 #2004-2008, 2014-2020
-bb <- read_csv("weeds_regional_area_estimates/BigBreak_wgs84_area_ha.csv")%>%
+bb <- read_csv("./weeds/data/ucd_hyperspectral_regional_area_estimates/BigBreak_wgs84_area_ha.csv")%>%
   add_column("site" = as.factor("Big Break"))
 
 #2021 data for all sites
-new <- read_csv("weeds_regional_area_estimates/RegionalAreaEstimates_2021_Provisional.csv")
-
-#read in time series of area data for common area of the delta from SMR repo
-smr <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/Status-and-Trends/master/data/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
+new <- read_csv("./weeds/data/ucd_hyperspectral_regional_area_estimates/RegionalAreaEstimates_2021_Provisional.csv")
 
 #estimated waterway area for each of the three sites, legal delta, and common area of delta
 #use these to calculate proportion of area covered by SAV and FAV
-ww <- read_csv("weeds_regional_area_estimates/waterway_area_ha.csv")
+ww <- read_csv("./weeds/data/ucd_hyperspectral_regional_area_estimates/waterway_area_ha.csv")
+
+#read in time series of area data for common area of the delta from SMR repo
+smr <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/Status-and-Trends/master/data/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
 
 #read in sonde data (2015-2021)
 wqf <- read_csv("data/frk_sonde_data_summary.csv")
