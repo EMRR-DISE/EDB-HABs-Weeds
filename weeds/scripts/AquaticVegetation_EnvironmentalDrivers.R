@@ -1,8 +1,7 @@
 #Emergency Drought Barrier
-#FRK sonde water quality data
-#calculate annual means and standard errors
+#format continuous and descrete water quality data
+#also Franks Tract herbicide use data
 #use to determine if aquatic weed species abundance correlate with water quality
-#based on SePro vegetation surveys conducted annually in October
 
 #packages
 library(tidyverse) #suite of data science tools
@@ -12,31 +11,56 @@ library(DEGreport) #adds corr and p to plots (from https://github.com/lpantano/D
 library(DroughtData) #load Dave's drought synthesis WQ data package for Delta Outflow data
 library(readxl) #read excel file
 library(janitor) #clean up column names
-
 # install.packages("devtools")
 #devtools::install_github("sbashevkin/discretewq")
 library(discretewq)
-#format Delta outflow data------------
 
-#view(raw_hydro_1975_2021)
-#glimpse(raw_hydro_1975_2021)
-
-dout <- raw_hydro_1975_2021 %>%
-  #add month column
-  mutate(month = as.integer(month(Date))) %>%
-  #just use March through Oct
-  filter((month > 2 & month < 11) & YearAdj > 2003) %>%
-  #calculate annual means
-  group_by(YearAdj) %>%
-  summarize(out_mean = mean(Outflow)) %>%
-  rename(year = YearAdj)
-
-#Read and format fluridone data for Franks Tract-----------
-#need to add clifton court herbicide data too
+#read in data-------------
 
 #read in fluridone application data (2006-2021)
-herb <- read_csv("data/floridone_applications_summary.csv")
+herb <- read_csv("./weeds/data_input/water_quality/fluridone_applications_summary.csv")
 
+#read and combine all FRK sonde WQ data files
+#only covers 2015 to present
+wq_list <- dir(path = "./weeds/data_input/water_quality/FRK_continuous_data" ,pattern = "\\.csv", full.names = T, recursive=T)
+frk <- map_dfr(wq_list, ~read_csv(.x)) %>%
+  glimpse()
+
+#read in discrete water quality data (note this is a large file)
+#EMP stations of interest are D19 (Franks Tract) and C9 (Clifton Court)
+#Bay Study station of interest is 853 (near Big Break)
+#Note that it doesn't yet include the 2021 data I need
+dwq <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=edi.731.3&entityid=6c5f35b1d316e39c8de0bfadfb3c9692")
+dwq = wq(Sources = c("EMP", "Baystudy"))
+
+#requested 2021 discrete data for C9 (Clifton Court) and D19 (Franks Tract) from EMP
+dwq21 <- read_excel("./weeds/data_input/water_quality/2021 DEMP Sonde Data_C9_D19.xlsx")
+
+#for 2021 Big Break data use Blind Point sonde because don't have Bay Study 853 data
+#should just request the data from Bay Study
+#got Blind Point data from WDL
+#https://wdl.water.ca.gov/WaterDataLibrary/StationDetails.aspx?Station=B9502900&source=map
+
+bp21_temp <- read_csv("./weeds/data_input/water_quality/BlindPoint_B9502900_Water_Temperature_Daily_Mean.csv",skip=8) %>%
+  clean_names() %>%
+  mutate(date = mdy_hms(date_time)) %>%
+  filter(quality_code =="1: Good data") %>%
+  rename(temp = water_temperature_daily_mean_degc) %>%
+  select(-c(date_time,quality_code)) %>%
+  glimpse()
+
+#unique(bp21_temp$quality_code) #"1: Good data"      "151: Data Missing"
+
+bp21_ec <- read_csv("./weeds/data_input/water_quality/BlindPoint_B9502900_Conductivity_Daily_Mean.csv",skip=8) %>%
+  clean_names() %>%
+  mutate(date = mdy_hms(date_time)) %>%
+  filter(quality_code =="1: Good data") %>%
+  rename(ec = conductivity_daily_mean_misc) %>%
+  select(-c(date_time,quality_code)) %>%
+  glimpse()
+
+#Format fluridone data for Franks Tract-----------
+#need to add clifton court herbicide data too
 
 herb_format <- herb %>%
   mutate(
@@ -60,65 +84,35 @@ herb_format <- herb %>%
   ) %>%
   select(-c(area_acres_tot,quantity_lbs_tot)) %>%
   glimpse()
-#write_csv(herb_format,"data/franks_tract_fluridone_applications_2006-2021_summary.csv")
+#write_csv(herb_format,"./weeds/data_output/franks_tract_fluridone_2006-2021_summary.csv")
 
+#format Delta outflow data------------
 
-#Read in discrete WQ data----------------
+#view(raw_hydro_1975_2021)
+#glimpse(raw_hydro_1975_2021)
 
-#read in discrete water quality data (note this is a large file)
-#EMP stations of interest are D19 (Franks Tract) and C9 (Clifton Court)
-#Bay Study station of interest is 853 (near Big Break)
-#Note that it doesn't yet include the 2021 data I need
-#dwq <- read_csv("https://portal.edirepository.org/nis/dataviewer?packageid=edi.731.3&entityid=6c5f35b1d316e39c8de0bfadfb3c9692")
+dout <- raw_hydro_1975_2021 %>%
+  #add month column
+  mutate(month = as.integer(month(Date))) %>%
+  #just use March through Oct
+  filter((month > 2 & month < 11) & YearAdj > 2003) %>%
+  #calculate annual means
+  group_by(YearAdj) %>%
+  summarize(out_mean = mean(Outflow)) %>%
+  rename(year = YearAdj)
 
-dwq = wq(Sources = c("EMP", "Baystudy"))
+#format discrete water quality data----------
 
-#for 2021 Big Break data use Blind Point sonde because don't have Bay Study 853 data
-#should just request the data from Bay Study
-#got Blind Point data from WDL
-#https://wdl.water.ca.gov/WaterDataLibrary/StationDetails.aspx?Station=B9502900&source=map
-
-#unique(bp21_temp$quality_code) #"1: Good data"      "151: Data Missing"
-
-bp21_temp <- read_csv("data/BlindPoint_B9502900_Water_Temperature_Daily_Mean.csv",skip=8) %>%
-  clean_names() %>%
-  mutate(date = mdy_hms(date_time)) %>%
-  filter(quality_code =="1: Good data") %>%
-  rename(temp = water_temperature_daily_mean_degc) %>%
-  select(-c(date_time,quality_code)) %>%
-  glimpse()
-
-
-bp21_ec <- read_csv("data/BlindPoint_B9502900_Conductivity_Daily_Mean.csv",skip=8) %>%
-  clean_names() %>%
-  mutate(date = mdy_hms(date_time)) %>%
-  filter(quality_code =="1: Good data") %>%
-  rename(ec = conductivity_daily_mean_misc) %>%
-  select(-c(date_time,quality_code)) %>%
-  glimpse()
-
+#join and summarize the temperature and EC data for Blind Point
 bp21 <- full_join(bp21_temp,bp21_ec) %>%
   filter(date > "2021-02-28" & date < "2021-11-01")  %>%
   summarise(across(where(is.numeric),
                    mean,
                    na.rm = T))
 
-
-#Dave data package doesn't include all the WQ data I need for my stations (as of 4/7/22)
-#view(raw_wq_1975_2021)
-#glimpse(raw_wq_1975_2021)
-
-#wq <- raw_wq_1975_2021 %>%
-  #just keep the two most relevant stations and months
-  #data package doesn't include Bay Study so no Bay Study 853 station
-  #also doesn't have all the months of data I need so use the EDI package + EMP data request for 2021
- # filter((Station == "D19" | Station == "C9") & (Month > 2 & Month < 11))
-
-#format discrete water quality data-----------
-
 dwq_format <- dwq %>%
   #keep just the stations of interest
-  filter(Station == "EMP C9" | Station == "EMP D19" | Station == "Baystudy 853") %>%
+  filter(Station == "C9" | Station == "D19" | Station == "853") %>%
   filter(Date > "2003-12-31") %>%
   mutate(month = month(Date)
          ,year = year(Date)) %>%
@@ -162,8 +156,8 @@ wq_msub <-dwq_par %>%
   filter(month > 2 & month < 11) %>%
   select(-month)
 
-#requested 2021 data for C9 and D19 from EMP
-dwq21 <- read_excel("data/2021 DEMP Sonde Data_C9_D19.xlsx") %>%
+#format 2021 data for C9 and D19 from EMP
+dwq21f <-  dwq21 %>%
   #clean up column names
   clean_names() %>%
   #split date and time because formatting as date time was causing problems for some reason
@@ -175,14 +169,14 @@ dwq21 <- read_excel("data/2021 DEMP Sonde Data_C9_D19.xlsx") %>%
 
 # Making data frame with existing station strings and their replacement
 stn <- data.frame(target = c("C9 - West Canal @ Clifton Court Intake","D19 - Frank's Tract near Russo's Landing"),
-                 replacement = c("EMP C9","EMP D19"))
+                 replacement = c("C9","D19"))
 
 # Making the named replacement vector from tr
 replacements <- c(stn$replacement)
 names(replacements) <- c(stn$target)
 
 #format 2021 WQ data
-dwq21_format <- dwq21 %>%
+dwq21_format <- dwq21f %>%
   mutate(
     #simplify station names
     Station = str_replace_all(station_name,pattern = replacements)
@@ -230,7 +224,7 @@ wq_avg <- wq_all %>%
 #also add temp and EC data from Blind Point sonde station (see bp21)
 
 wq_avg2 <- wq_avg %>%
-  add_row(Station = "Baystudy 853"
+  add_row(Station = "853"
           ,year = as.numeric("2021")
           ,Temperature = as.numeric("19.33185")
           ,Conductivity= as.numeric("2168.672")
@@ -246,16 +240,19 @@ wqout <- full_join(wq_avg2,dout) %>%
   arrange(Station, year)
 
 #write summary stats file
-#write_csv(wqout,"EDB/discrete_wq&outflow_data_summary.csv")
+#write_csv(wqout,"./weeds/data_output/discrete_wq&outflow_data_summary.csv")
 
+#Dave data package doesn't include all the WQ data I need for my stations (as of 4/7/22)
+#view(raw_wq_1975_2021)
+#glimpse(raw_wq_1975_2021)
 
-#Franks Tract sonde: data formatting----------------------
+#wq <- raw_wq_1975_2021 %>%
+#just keep the two most relevant stations and months
+#data package doesn't include Bay Study so no Bay Study 853 station
+#also doesn't have all the months of data I need so use the EDI package + EMP data request for 2021
+# filter((Station == "D19" | Station == "C9") & (Month > 2 & Month < 11))
 
-#read and combine all FRK sonde WQ data files
-#only covers 2015 to present
-wq_list <- dir(path = "FRK_data" ,pattern = "\\.csv", full.names = T, recursive=T)
-frk <- map_dfr(wq_list, ~read_csv(.x)) %>%
-  glimpse()
+#format Franks Tract continuous data----------------------
 
 #look at date ranges
 #includes data from station installation to Nov 2021
@@ -304,7 +301,7 @@ frk_clean <- frk %>%
   #geom_line()+
   #facet_wrap(~parameter, scales = "free")
 
-#Franks Tract sonde: look at correlations among the six parameters---------------
+#Franks Tract sonde: plot the six parameters---------------
 
 #start with frk df
 #remove the bad data
@@ -331,5 +328,5 @@ ggplot(frk_sum, aes(x=year, y =value_mean))+
   facet_wrap(~parameter, scales = "free")
 
 #write summary stats file
-#write_csv(frk_sum,"EDB/frk_sonde_data_summary.csv")
+#write_csv(frk_sum,"./weeds/data_output/frk_sonde_data_summary.csv")
 
