@@ -138,7 +138,7 @@ new_formatted <- new %>%
   glimpse()
 
 #combine 2021 data with rest of time series
-alln <- bind_rows(all,new_formatted) %>%
+alln <- bind_rows(allsites,new_formatted) %>%
   arrange(site,year)
 
 #look at number of years for each imaging month
