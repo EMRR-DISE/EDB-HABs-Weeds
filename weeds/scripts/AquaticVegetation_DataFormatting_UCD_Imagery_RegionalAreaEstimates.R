@@ -27,7 +27,9 @@ bb <- read_csv("./weeds/data_input/ucd_hyperspectral_regional_area_estimates/Big
   add_column("site" = as.factor("Big Break"))
 
 #read in time series of area data for common area of the delta from SMR repo
-smr <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/Status-and-Trends/master/data/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
+#smr <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/Status-and-Trends/master/data/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
+smr <- read_csv("./weeds/data_input/ucd_hyperspectral_regional_area_estimates/AquaticVegCoverage_2004-2020_CSTARS_report.csv")
+
 
 #2021 data for all regions
 new <- read_csv("./weeds/data_input/ucd_hyperspectral_regional_area_estimates/RegionalAreaEstimates_2021_Provisional.csv")
