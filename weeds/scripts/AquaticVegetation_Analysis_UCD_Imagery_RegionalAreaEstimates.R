@@ -396,6 +396,11 @@ wrv <-left_join(vaw,wr) %>%
   select(-station) %>%
   arrange(site,year)
 
+#closer look at Big Break veg and conductivity/outflow
+bbwr <- wrv %>%
+  filter(site=="Big Break") %>%
+  select(site,year,month,out_mean,conductivity,sav,fav)
+
 dfta <- wrv %>%
   filter(site == "Franks Tract")
 
@@ -474,6 +479,8 @@ vstat2 <- aout2 %>%
     ylab("Area of SAV (ha)")+
     theme_bw()
 )
+#ggsave(plot=ec, "./weeds/plots/Hyperspectral_BB_SAV_Area_v_EC.png",type ="cairo-png",width=8, scale=0.9, height=4.5,units="in",dpi=300)
+
 
 #plot correlation between SAV acreage and Delta outflow at Big Break
 (oflw<-ggplot(dbb, aes(out_mean,sav))+
@@ -488,6 +495,19 @@ vstat2 <- aout2 %>%
     theme_bw()
 )
 #ggsave(plot=oflw, "./weeds/plots/Hyperspectral_BB_SAV_Area_v_Outflow.png",type ="cairo-png",width=8, scale=0.9, height=4.5,units="in",dpi=300)
+
+#plot correlation between outflow and EC at Big Break
+(outec<-ggplot(dbb, aes(conductivity,out_mean))+
+    geom_smooth(method = "lm")  +
+    geom_point() +
+    geom_text(aes(label=year)
+              , vjust = -0.9
+    )+
+    #geom_cor(method = "pearson")+
+    xlab("Annual mean conductivity (uS per cm)")+
+    ylab("Annual mean delta outflow (cubic ft per sec)")+
+    theme_bw()
+)
 
 #plot correlation between FAV acreage and temperature at Big Break
 (wtemp<-ggplot(dbb, aes(temperature,fav))+
