@@ -508,6 +508,8 @@ vstat2 <- aout2 %>%
     ylab("Annual mean delta outflow (cubic ft per sec)")+
     theme_bw()
 )
+#ggsave(plot=outec, "./weeds/plots/Hyperspectral_BB_Outflow_v_EC.png",type ="cairo-png",width=8, scale=0.9, height=4.5,units="in",dpi=300)
+
 
 #plot correlation between FAV acreage and temperature at Big Break
 (wtemp<-ggplot(dbb, aes(temperature,fav))+
