@@ -3,6 +3,8 @@
 #conduct PERMANOVA analysis on SAV community
 #look for differences among years
 
+#IMPORTANT: THIS ANALYSIS WAS NEVER COMPLETED
+
 #Notes
 #use DWR WY types or a simplification of them to categorize years in analyses
 #should I also try SIMPER?
@@ -25,11 +27,11 @@ sav <- read_csv("https://raw.githubusercontent.com/InteragencyEcologicalProgram/
 
 #PERMANOVA assumes roughly balances design
 #if looking at effect of year, then make sure years have similar sample sizes
-sav_n <- sav %>% 
-  distinct(station,date) %>% 
-  group_by(date) %>% 
+sav_n <- sav %>%
+  distinct(station,date) %>%
+  group_by(date) %>%
   summarize(n = n())
-#all years have 100 samples except for two 
+#all years have 100 samples except for two
 #2016 = 45, 2015 = 200
 #should randomly subset 2015 to 100 samples
 #could exclude 2016 or just let the design be a bit unbalanced
@@ -37,34 +39,34 @@ sav_n <- sav %>%
 #create random subset of 100 rake samples from the 200 collected in 2015
 
 #start by grabbing the 2015 sampling data
-sav15 <- sav %>% 
+sav15 <- sav %>%
   #filter data set to just 2015 samples
-  filter(date=="2015-10-13") 
+  filter(date=="2015-10-13")
 
 #choose which stations to keep using random numbers
-sav15r <- sav15 %>% 
+sav15r <- sav15 %>%
   #condense to just the list of unique stations
-  distinct(station) %>% 
+  distinct(station) %>%
   #add column of randomly generated numbers
-  mutate(random = sample(200, size = nrow(.), replace = F)) %>% 
+  mutate(random = sample(200, size = nrow(.), replace = F)) %>%
   #just keep rows assigned to 1-100
   filter(random >0 & random < 101)
 
 #subset the 2015 data based on random numbers
-sav15sb <- left_join(sav15r,sav15) %>% 
+sav15sb <- left_join(sav15r,sav15) %>%
   select(-random)
 
 #remove the original full set of 2015 data from main data set
-sav_no15 <- sav %>% 
+sav_no15 <- sav %>%
   filter(date!="2015-10-13")
 
 #add the subsetted 2015 data to main data set
 sav_sub <- bind_rows(sav_no15,sav15sb)
 
 #make sure there are now 100 instead of 200 samples for 2015
-sav_n2 <- sav_sub %>% 
-  distinct(station,date) %>% 
-  group_by(date) %>% 
+sav_n2 <- sav_sub %>%
+  distinct(station,date) %>%
+  group_by(date) %>%
   summarize(n = n())
 #looks like it worked
 
@@ -75,20 +77,20 @@ ggplot(sav_sub, aes(x = rake_coverage_ordinal) )+
 
 #look at rare taxa and consider removing them
 #Note that these numbers will likely be affected by 2015 subsampling
-sav_spp_sum <- sav_sub %>% 
+sav_spp_sum <- sav_sub %>%
   #drop the visual samples and any abundances of zero
-  filter(survey_method=="rake_weighted" & rake_coverage_ordinal!=0) %>% 
-  group_by(species) %>% 
-  summarize(freq = n()) %>% 
+  filter(survey_method=="rake_weighted" & rake_coverage_ordinal!=0) %>%
+  group_by(species) %>%
+  summarize(freq = n()) %>%
   arrange(freq)
 #let's drop the spp with fewer than ten detections
 unique(sav_spp_sum$species)
 #five rare taxa removed in code below
 
 #format data set as matrix
-sav_wide <- sav_sub %>% 
+sav_wide <- sav_sub %>%
   #add year column
-  mutate(year = as.factor(year(date))) %>% 
+  mutate(year = as.factor(year(date))) %>%
   filter(
     #remove the small number of visual only samples
     survey_method!="visual"
@@ -98,22 +100,22 @@ sav_wide <- sav_sub %>%
     & year != "2016"
     ) %>%
   #remove rare taxa (fewer than 10 detections ever)
-  filter(species!="Heteranthera_dubia" & species!="Nitella_sp" & species!="Potamogeton_nodosus"      
-         & species!="Potamogeton_pusillus"  & species!= "Potamogeton_zosteriformis") %>% 
-  #filter(species=="Potamogeton_richardsonii" | species== "Ceratophyllum_demersum" | species== "Egeria_densa" | species== "Najas_guadalupensis") %>% 
+  filter(species!="Heteranthera_dubia" & species!="Nitella_sp" & species!="Potamogeton_nodosus"
+         & species!="Potamogeton_pusillus"  & species!= "Potamogeton_zosteriformis") %>%
+  #filter(species=="Potamogeton_richardsonii" | species== "Ceratophyllum_demersum" | species== "Egeria_densa" | species== "Najas_guadalupensis") %>%
   #convert long to wide
   pivot_wider(id_cols=c(station,year,date)
               , names_from = species
-              , values_from = rake_coverage_ordinal) 
+              , values_from = rake_coverage_ordinal)
 
 #create df with just the environmental predictors
-sav_env<- sav_wide %>% 
-  select(year) %>% 
+sav_env<- sav_wide %>%
+  select(year) %>%
   glimpse()
 
 #create df with just subset of columns that contain species abundance data
-sav_data<-sav_wide %>% 
-  select(Egeria_densa:Myriophyllum_spicatum) %>% 
+sav_data<-sav_wide %>%
+  select(Egeria_densa:Myriophyllum_spicatum) %>%
   glimpse()
 
 #square root transform the abundance data
@@ -137,10 +139,10 @@ permanova_sav<-adonis2(sav_data_sqrt ~ year, data=sav_env
                        #,by = "margin"
                        ,method="bray"
                        )
-permanova_sav 
+permanova_sav
 #year is significant p < 0.001
 
-#pairwise PERMANOVA 
+#pairwise PERMANOVA
 #determine which years are different from one another in centroids
 pairwise_comp <- pairwise.perm.manova(resp = sav_dist, fact = sav_env$year
                                       #test chosen arbitrarily for now
@@ -158,7 +160,7 @@ pairwise_comp <- pairwise.perm.manova(resp = sav_dist, fact = sav_env$year
                                       )
 pairwise_comp
 #indicates that all years are different from all other years
-#both pseudoreplication and lack of homogeneity of disperions are likley an issue 
+#both pseudoreplication and lack of homogeneity of disperions are likley an issue
 
 
 #perform analysis of multivariate homogeneity of group dispersions
@@ -167,7 +169,7 @@ pairwise_comp
 #if not similar among years, this can results in misleading significant p-values
 
 dispersion <- betadisper(sav_dist, group=sav_env$year)
-permutest(dispersion) 
+permutest(dispersion)
 #p<0.001, so we failed the test (ie, dispersions are not homogeneous)
 #so we don't know if centroids or dispersions caused the significant year effect
 #this is true regardless of whether we subset the 2015 data or exclude the 2016 data
@@ -195,7 +197,7 @@ sav.mds2 <- metaMDS(sav_data,dist="horn",k=4, try = 99, trymax = 150,autotransfo
 
 #shepard plot
 stressplot(sav.mds2)
-#Large scatter around the line suggests that original dissimilarities are 
+#Large scatter around the line suggests that original dissimilarities are
 #not well preserved in the reduced number of dimensions
 
 #goodness of fit
@@ -248,7 +250,7 @@ cbbPalette <- c("#e6194B", "#4363d8", "#ffe119")
 
 ggMDS_year<- ggplot() + geom_point(data=data.scores,aes(x=NMDS1,y=NMDS2,fill=Year),size=8,colour="black",shape=21,alpha=0.4) +
   theme_bw() + geom_segment(data = spp.scrs.shiny, aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),arrow = arrow(length = unit(0.25, "cm")), colour = "black") +
-  scale_fill_manual(values=cbbPalette) + 
+  scale_fill_manual(values=cbbPalette) +
   geom_text(data = spp.scrs.shiny, aes(x = NMDS1, y = NMDS2, label = Species),size=5,nudge_x = .001,nudge_y = -.005) +
   theme(axis.text.x = element_text(size=19, color="black"),axis.text.y = element_text(size=19, color="black")) +
   theme(legend.background=element_rect(colour="black"),legend.position = c(0.85,0.75),legend.title=element_text(size=20),legend.text=element_text(size=20))+
