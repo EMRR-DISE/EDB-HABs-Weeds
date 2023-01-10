@@ -308,29 +308,80 @@ library(lme4)
 library(lmerTest)
 library(emmeans)
 library(DHARMa)
+library(DroughtData)
+
+#replace values below the reporting limit
+NutsRL = mutate(hab_nutr_chla_mvi, Month = month(Date),
+                Year = year(Date), Chlorophyll = as.numeric(Chlorophyll),
+                Nitrate = as.numeric(DissNitrateNitrite),
+                Phosphorus = as.numeric(DissOrthophos)) %>%
+  # Remove NA values in DissAmmonia
+  tidyr::drop_na(Chlorophyll) %>%
+  # Replace <RL values with random value
+  drt_replace_rl(Chlorophyll, Chlorophyll_Sign) %>%
+  #log transform chlorophyll
+
+  drt_replace_rl(Nitrate, DissNitrateNitrite_Sign) %>%
+  drt_replace_rl(DissOrthophos, DissOrthophos_Sign) %>%
+  drt_replace_rl(DissAmmonia, DissAmmonia_Sign)%>%
+mutate(LogChl = log(Chlorophyll), logNit = log(Nitrate), logPhos = log(Phosphorus), logAm = log(DissAmmonia))
+
+
+NutsRL2 = st_as_sf(NutsRL, coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  st_join(reg3) %>%
+  st_drop_geometry() %>%
+  filter(!is.na(Stratum2)) %>%
+  mutate(Station = case_when(Source == "USGS_CAWSC" ~str_sub(Station, start = 6),
+                             TRUE ~ Station))%>%
+  filter(Stratum2 %in% c("Lower SJ", "South Delta", "Lower Sac")) %>%
+  mutate(Month = month(Date), Year = year(Date), Season = case_when(
+    Month %in% c(12,1,2) ~ "Winter",
+    Month %in% c(3,4,5) ~ "Spring",
+    Month %in% c(6,7,8) ~ "Summer",
+    Month %in% c(9,10,11) ~ "Fall"
+  ), Yearf = as.factor(Year))
+
+SoNutsmean2 = NutsRL2 %>%
+  pivot_longer(cols = c(DissAmmonia, Nitrate, Chlorophyll, Phosphorus), names_to= "Analyte",
+               values_to = "Concentration")  %>%
+  group_by(Year, Season, Analyte) %>%
+  summarize(ConcentrationM = mean(Concentration, na.rm = T),
+            SEc = sd(Concentration, na.rm = T)/sqrt(n())) %>%
+  mutate(Season = factor(Season, levels = c("Winter", "Spring", "Summer", "Fall")))
+
+
+ggplot(SoNutsmean2, aes(x=Year, y = ConcentrationM, fill = Season)) + geom_col()+
+  geom_errorbar(aes(ymin = ConcentrationM - SEc, ymax = ConcentrationM + SEc ))+
+  facet_grid(Analyte~Season, scales = "free_y")+
+  scale_fill_brewer(palette = "Set2", guide = NULL)+
+  ylab("Concentration")+
+  theme_bw()
 
 #First let's do nitrate. Heres's where the reportling limit thing could mess us sup.
-nit = lmer(log(Nitrate+0.04) ~ as.factor(Year) + Season + (1|Month)+ (1|Station),  data = Sonutssf)
+nit = lmer(logNit~ as.factor(Year) + Season + (1|Month)+ (1|Station),  data =NutsRL2)
 summary(nit)
 plot(nit)
 nitres = simulateResiduals(nit)
 plot(nitres)
 #OK, some issues, but not terrible
+emmeans(nit, pairwise ~ "Year")
 
 
 #Now the ammonium
-Amm = lmer(log(Ammonium+0.05) ~ as.factor(Year)+Season + (1|Month)+ (1|Station),  data = Sonutssf)
+Amm = lmer(logAm ~ as.factor(Year)+Season + (1|Month)+ (1|Station),  data = NutsRL2)
 summary(Amm)
 plot(simulateResiduals(Amm))
-
+library(visreg)
 
 #Chlorophyll
-chl= lmer(log(Chl+0.01) ~ as.factor(Year) + Season + (1|Month)+ (1|Station),  data = Sonutssf)
+chl= lmer(LogChl ~ Yearf + Season + (1|Month)+ (1|Station),  data = NutsRL2)
 summary(chl)
 plot(simulateResiduals(chl))
+visreg(chl)
+visreg(chl, xvar = "Yearf", by = "Season")
 
 #orthophosphate
-Orth= lmer(log(Phosphorus+0.05) ~ as.factor(Year) + Season + (1|Month)+ (1|Station),  data = Sonutssf)
+Orth= lmer(logPhos ~ as.factor(Year) + Season + (1|Month)+ (1|Station),  data = NutsRL2)
 summary(Orth)
 plot(Orth)
 plot(simulateResiduals(Orth))

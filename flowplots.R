@@ -35,7 +35,7 @@ DFlong = pivot_longer(DF, cols = c(OUT, EXPORTS, SJR), names_to = "Metric", valu
   mutate(Sevenday = rollmean(CFS, k = 7, fill = NA), DOY = yday(Date))
 
 #Mean daily flow metric over the past twenty two years
-DFmean = group_by(DFlong, Metric, DOY) %>%
+DFmean = group_by(DFlong2, Metric, DOY) %>%
   summarize(Sevenday = exp(mean(log(Sevenday), na.rm = T)), CFS = mean(CFS, na.rm = T)) %>%
   mutate(Metric2 = "Historic Mean")
 
@@ -46,6 +46,7 @@ DFlong2 = mutate(DFlong, Metric2 = "2021") %>%
   bind_rows(DFmean)
 
 #write.csv(DFlong2, "outputs/Flow_2021.csv", row.names = FALSE)
+DFlong2 <- read_csv("data/Dayflow2014_2021.csv")
 
 #some quick plots
 ggplot(filter(DFlong, Date > ymd("2021-05-01"), CFS >0), aes(x = Date, y = CFS, color = Metric))+
@@ -64,7 +65,7 @@ ggplot(filter(DFlong2, DOY >120, DOY <270) )+
   xlab("Date")+ ylab("Flow (CFS - seven day average)")
 
 #Facet by metric to be easier to show in presentation
-ann_text <- data.frame(Metric = c("EXPORTS", "OUT", "OUT","EXPORTS", "OUT", "OUT"),
+ann_text <- data.frame(Metric = c("Project Exports", "Outflow", "Outflow","Project Exports", "Outflow", "Outflow"),
                        Line = c("TUCP", "D1641", "TUCP", "TUCP", "D1641", "TUCP"),
                        Sevenday = c(1500, 4000, 3000, 1500, 4000, 3000),
                        DOY = c(121, 152, 152, 213, 213, 213))
@@ -79,6 +80,16 @@ ggplot(filter(DFlong2, DOY >120, DOY <270) )+
   facet_wrap(~Metric, nrow = 3, scales = "free_y")+
   xlab("Date")+ ylab("Flow (CFS - seven day average)")
 
+#Take out SJR and historic mean
+ggplot(filter(DFlong2, DOY >120, DOY <270, Metric2 != "Historic Mean", Metric != "San Joaquin Flow") )+
+  geom_line(aes(x = DOY, y = Sevenday), size = 1)+
+  theme_bw()+
+  geom_line(data = ann_text,mapping = aes(x = DOY, y = Sevenday, color = Line), size = 1)+
+  scale_x_continuous(breaks = c(121, 152, 182, 213, 244, 274), labels = c("May", "Jun", "Jul", "Aug", "Sep", "Oct"))+
+  scale_linetype(name = NULL)+
+  scale_color_brewer(palette = "Set2", name = NULL)+
+  facet_wrap(~Metric, nrow = 3, scales = "free_y")+
+  xlab("Date")+ ylab("Flow (CFS - seven day average)")
 
 
 DFmonth = mutate(DFlong2, Month = month(Date)) %>%

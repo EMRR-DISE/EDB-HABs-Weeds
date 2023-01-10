@@ -18,12 +18,12 @@ library(here)
 i_am("HABanalysis.R")
 
 #import data with all the visual index data
-load("data/HABs.RData")
-
+#load("data/HABs.RData")
+load("HABsw2022.RData")
 #HABs = read_csv("data/mc_vis_index_wq.csv")
 
 #import shapefile with regions
-regions = st_read("data/HABregions.shp")
+load("data/Regions.RData")
 
 
 
@@ -32,7 +32,7 @@ regions = st_read("data/HABregions.shp")
 #                 position = "jitter", label.size = 0.05)
 
 #take out DOP because they do things differently
-HABs = filter(HABs, Source != "DOP")
+HABs = filter(HABs2022, Source != "DOP")
 
 #check a few plots for outliers
 ggplot(HABs, aes(x = Temperature)) + geom_histogram()
@@ -105,12 +105,12 @@ SFHall =   sfhaball %>%
 
 
 ###############################
-#plot of just 2021, all months
+#plot of just 2022, all months
 #THIS IS THE PLOT FOR THE REPORT
-SFH2021 = filter(SFHall, Year == 2021)
+SFH2022 = filter(SFHall, Year == 2022)
 
 #This is figure 2-11 in the report
-ggplot(filter(SFHall, Year == 2021), aes(x = Stratum2, fill = Mic))+geom_bar(position = "fill", color = "grey")+
+ggplot(filter(SFHall, Year == 2022), aes(x = Stratum2, fill = Mic))+geom_bar(position = "fill", color = "grey")+
   facet_wrap(~Month, nrow = 3)+
   scale_fill_manual(values = c("white", "tan2", "yellow", "red", "darkred"), name = "Microcystis") +
   theme_bw()+
@@ -120,6 +120,8 @@ ggplot(filter(SFHall, Year == 2021), aes(x = Stratum2, fill = Mic))+geom_bar(pos
 
 ggsave("plots/HABs2021_noDOP.tiff", device = "tiff", width = 6, height = 5)
 
+
+ggsave("plots/HABs2021_noDOP.tiff", device = "tiff", width = 6, height = 5)
 
 #Now summarize by month, year, and stratum and add zeros so we can plot it
 SFHall2 = group_by(SFHall, Yearm, Yearf, Year, Month, Mic, Stratum) %>%

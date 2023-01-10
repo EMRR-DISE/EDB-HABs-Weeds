@@ -22,6 +22,7 @@ library(pollen)
 #We just need teh temperature data
 TempsD = filter(WQ.daily, Analyte == "Temp")
 
+
 #use the 'gdd' function in the 'pollen' package to calculate number of degree-days above 19
 #Take out Franks from 2015, because we only have half the year.
 TempsDDD = mutate(TempsD, Year = year(Date), DOY = yday(Date)) %>%
@@ -134,6 +135,73 @@ ggplot(alltemp, aes(x = WaterMean, y = TempC, color = as.factor(Year))) +
   geom_smooth(method = "lm")+
   ylab("Air Temperature")+ xlab("Water Temperature")
 
+Tempave = mutate(TempsD, Year = year(Date), DOY = yday(Date), Month = month(Date)) %>%
+  filter(!(Site == "FRK" & Year == 2015)) %>%
+  ungroup() %>%
+  group_by(Year, Month) %>%
+  summarize(Meantemp = mean(Daily.Mean), Max = mean(Daily.Max), Min = mean(Daily.Min), sd = sd(Daily.Mean)) %>%
+  filter(Month %in% c(5,6,7,8,9,10))
+
+ggplot(Tempave, aes(x = Year, fill = as.factor(Month))) +
+  geom_col(aes(y = Meantemp), position = "dodge") +
+  geom_errorbar(aes(ymin = Min, ymax = Max), alpha = 0.5, position = "dodge", group = "Month")+
+  coord_cartesian(ylim = c(18, 26)) + ylab("Mean water temperature C")+
+  scale_fill_viridis_d(option = "turbo", name = "Month") + theme_bw()
+
+ggplot(TempsDDD, aes(x = DOY, y = Daily.Mean)) + geom_point(aes(color = Site), alpha = 0.5)+
+  coord_cartesian(xlim=c(100, 300), ylim = c(15, 27))+
+  geom_smooth()+facet_wrap(~Year)+ theme_bw()+ ylab("Daily Mean Temperature")
+
+ggplot(TempsDDD, aes(x = DOY, y = Daily.Mean)) + geom_line(aes(color = Site), alpha = 0.5)+
+  coord_cartesian(xlim=c(100, 300), ylim = c(15, 27))+
+  facet_wrap(~Year)+ theme_bw()+ ylab("Daily Mean Temperature")
+
+#try a heatmap
+ggplot(Tempave) + geom_tile(aes(x = Month, y = Year, fill = Meantemp))+
+  scale_fill_viridis_b(option = "A")+
+  scale_y_continuous(breaks = c(2015, 2016, 2017, 2018, 2019, 2020, 2021))
+
+ggplot(Tempave) + geom_tile(aes(x = Year, y = Month, fill = Meantemp))+
+  scale_fill_viridis_b(option = "A")+
+  scale_x_continuous(breaks = c(2015, 2016, 2017, 2018, 2019, 2020, 2021))
+
+#Scale based on DOY
+
+aves = group_by(TempsDDD, DOY) %>%
+  summarize(Ave = mean(Daily.Mean), Maxave = mean(Daily.Max), Minave = mean(Daily.Min))
+
+TempsDDD2 = left_join(TempsDDD, aves) %>%
+  mutate(Diff = Daily.Mean - Ave)
+
+ggplot(TempsDDD2, aes(x = DOY, y = Diff, color = as.factor(Year))) + geom_point(alpha = 0.2)+
+  geom_smooth()+ theme_bw()
+#woah!
+
+Tempave3 = group_by(TempsDDD2) %>%
+group_by(Year, Month) %>%
+  summarize(Ave = mean(Ave), Maxave = mean(Maxave), Minave = mean(Minave),
+            Meantemp = mean(Daily.Mean), Max = mean(Daily.Max), Min = mean(Daily.Min),
+            Meandiff = Meantemp-Ave, Maxdiff = Max-Maxave, Mindiff = Min - Minave) %>%
+  filter(Month %in% c("May", "Jun", "Jul","Aug","Sep"))
+
+#normalized bar plot
+ggplot(Tempave3, aes(x = Year, fill = Month)) +
+  geom_col(aes(y = Meandiff), position = "dodge") +
+  geom_errorbar(aes(ymin = Mindiff, ymax = Maxdiff), alpha = 0.5, position = "dodge", group = "Month")+
+   ylab("Water Temperature Difference from Average")+
+  scale_fill_viridis_d(option = "turbo", name = "Month") + theme_bw()
+
+Tempave3.1 = group_by(TempsDDD2) %>%
+  group_by(Year, Month, DOY) %>%
+  summarize(Ave = mean(Ave), Maxave = mean(Maxave), Minave = mean(Minave),
+            Meantemp = mean(Daily.Mean), Max = mean(Daily.Max), Min = mean(Daily.Min),
+            Meandiff = Meantemp-Ave, Maxdiff = Max-Maxave, Mindiff = Min - Minave) %>%
+  filter(Month %in% c("May", "Jun", "Jul","Aug","Sep"))
+
+ggplot(Tempave3.1, aes(x = DOY, y = Meandiff, color = as.factor(Year)))+
+  geom_point()+ geom_smooth()+
+  scale_color_brewer("Blues")+
+  theme_bw()+ylab("Water Temperature difference from average")+ xlab("Day of Year")
 
 #switch format for plotting
 alltemplong = alltemp %>%
@@ -155,6 +223,50 @@ ggplot(alltemplong, aes(x = DOY, y =`MeanTemp`, color = as.factor(Year))) +
   xlab("Day of Year")
 
 ggsave("plots/Meantemp.tiff", device = "tiff", width = 6, height = 4)
+
+#by day of year, just water temp
+ggplot(alltemp, aes(x = DOY, y =WaterMean, color = as.factor(Year))) +
+  geom_point(alpha = 0.1)+
+ scale_color_brewer(palette = "Blues", name = NULL)+
+  geom_smooth(se = FALSE)+
+  coord_cartesian(xlim = c(70, 320), ylim = c(10, 30))+
+  ylab("Daily Mean Temp (C)")+
+  theme_bw()+
+  scale_x_continuous(breaks = c(91, 152, 213, 274),
+                     labels = c("Apr", "Jun", "Aug", "Oct"))+
+  xlab("Day of Year")
+
+
+
+
+Tempave2 = mutate(TempsD, Year = year(Date), DOY = yday(Date), Month = month(Date)) %>%
+  filter(!(Site == "FRK" & Year == 2015)) %>%
+   filter(Month %in% c(5,6,7,8,9,10)) %>%
+ungroup() %>%
+  group_by(Year) %>%
+  summarize(Meantemp = mean(Daily.Mean), Max = mean(Daily.Max), Min = mean(Daily.Min), sd = sd(Daily.Mean))
+
+
+#Bar plot just by year
+
+ggplot(Tempave2, aes(x = Year)) +
+  geom_col(aes(y = Meantemp, fill = as.factor(Year)), position = "dodge") +
+  geom_errorbar(aes(ymin = Min, ymax = Max), alpha = 0.5, position = "dodge", group = "Month")+
+  coord_cartesian(ylim = c(21, 23.5)) + ylab("Mean water temperature C") + theme_bw()
+
+#boxplot
+ggplot(filter(TempsD, month(Date) %in% c(5,6,7,8,9,10)), aes(x = Year)) +
+  geom_boxplot(aes(y = Daily.Mean, fill = as.factor(Year)), position = "dodge") +
+ ylab("Mean water temperature C") + theme_bw()+
+  scale_fill_brewer(palette = "Set2", guide = NULL)
+
+#beeswarm plot
+library(ggbeeswarm)
+
+ggplot(filter(TempsD, month(Date) %in% c(5,6,7,8,9,10)), aes(x = Year)) +
+  geom_quasirandom(aes(y = Daily.Mean, color = as.factor(Month)), position = "dodge") +
+  ylab("Mean water temperature C") + theme_bw()
+
 
 
 allDDlong = alltemp %>%

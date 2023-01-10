@@ -249,7 +249,7 @@ ggplot(EMP_nocy, aes(x = Stratum, y = CountperML, fill = AlgalType))+
   geom_col()+facet_grid(Year~Month)
 
 ggplot(filter(EMP_nocy, Year == 2016), aes(x = Month, y = CountperML, fill = AlgalType))+
-  geom_col()+facet_wrap(~Stratum)
+  geom_col(position = "fill")+facet_wrap(~Stratum)
 
 ggplot(filter(EMP_wzeros, Year == 2016), aes(x = Month, y = CountperML, fill = AlgalType))+
   geom_col()+facet_wrap(~Stratum)

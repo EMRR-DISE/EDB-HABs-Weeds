@@ -29,7 +29,13 @@ EMP_wzeros = pivot_wider(phyto_edb, id_cols = c(Station, Date, Stratum, Stratum2
 
 ggplot(EMP_wzeros, aes(x = Station, y = CountperML, fill = Genus))+ geom_col()+facet_wrap(~Month)
 
-ggplot(EMP_wzeros, aes(x = Stratum, y = CountperML, fill = AlgalType))+ geom_col()+facet_grid(Year~Month)
+ggplot(EMP_wzeros, aes(x = Stratum, y = CountperML, fill = AlgalType))+
+  geom_col()+facet_grid(Year~Month)+
+  scale_fill_brewer(palette = "Set3")
+
+ggplot(EMP_wzeros, aes(x = Stratum, y = CountperML, fill = AlgalType))+
+  geom_col(position = "fill")+facet_grid(Year~Month)+
+  scale_fill_brewer(palette = "Set3")
 
 ###################################################
 #Harmful species
@@ -61,10 +67,14 @@ ggplot(filter(EMPHABave, Genus != "Microcystis"),
 
 #one more try
 
-ggplot(EMPHABave, aes(x = Year, y = CountperML, fill = Genus))+
-  geom_col(position = "fill")+facet_wrap(~Stratum2) +
+ggplot(EMPHABave, aes(x = Month, y = CountperML, fill = Genus))+
+  geom_col()+facet_wrap(~Stratum2, scales = "free_y") +
   ylab("Organisms per mL") + theme_bw()+ theme(legend.position = "bottom")+
   scale_x_continuous(breaks = c(2,6,10), labels = c("Feb", "Jun", "Oct"))
+
+ggplot(EMPHABave, aes(x = Year, y = CountperML, fill = Genus))+
+  geom_col(position = "fill")+facet_wrap(~Stratum2) +
+  ylab("Organisms per mL") + theme_bw()+ theme(legend.position = "bottom")
 
 #I think this is the one I want to use
 ggplot(EMPHABave, aes(x = Year, y = CountperML, fill = Genus))+
