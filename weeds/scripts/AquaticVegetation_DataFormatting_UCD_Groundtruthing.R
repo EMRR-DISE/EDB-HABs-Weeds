@@ -197,3 +197,44 @@ weeds_ccourt <- cstars_format3 %>%
 #write a file with Big Break and Franks Tract data
 weeds_fb <- bind_rows(weeds_franks,weeds_bbreak)
 #write_csv(weeds_fb,"./weeds/data_output/CSTARS_2021_FT&BB_Formatted.csv")
+
+#make a slightly different version for EDI
+
+#create sample IDs
+sampid <- weeds_fb %>%
+  distinct(site,latitude_wgs84,longitude_wgs84,date) %>%
+  arrange(site,latitude_wgs84,longitude_wgs84,date) %>%
+  rowid_to_column("sample_id")
+
+weeds_fb2 <- weeds_fb %>%
+  #drop geometry
+  st_set_geometry(NULL) %>%
+  #add sample ID
+  left_join(sampid) %>%
+  #move site to first column
+  relocate(site:sample_id,.before = latitude_wgs84) %>%
+  #replace NA with zero for rake_prop when rake_teeth_corr is zero
+  mutate(rake_prop2 = case_when(rake_teeth_corr==0~as.numeric(NA),TRUE ~ rake_prop)) %>%
+  #for some reason, there's a sample with no veg but has a row for Egeria and one for NA
+  #filter out the Egeria row
+  filter(!(rake_teeth_corr==0 & !is.na(species))) %>%
+  #order by site and sample id
+  arrange(site,latitude_wgs84,longitude_wgs84,date) %>%
+  #drop old rake_prop and rename new one
+  select(-rake_prop) %>%
+  rename(rake_prop = rake_prop2) %>%
+  glimpse()
+
+#write_csv(weeds_fb2,"./weeds/data_output/CSTARS_2021_FT&BB_Formatted_EDI.csv")
+
+
+
+
+
+
+
+
+
+
+
+
