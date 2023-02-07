@@ -74,15 +74,18 @@ herb_format <- herb %>%
   mutate(
     #calculate rate in ppb across all three Franks Tract sites
     #mean depth was alway 7.9 ft
-    fl_rate_ppb = (quantity_lbs_tot / (area_acres_tot * 7.9))*367.73331896144
+    fl_rate_ppb1 = (quantity_lbs_tot / (area_acres_tot * 7.9))*367.73331896144
     #convert acres to hectares
     ,fl_area_ha = area_acres_tot * 0.404686
     #convert lbs to kg
     ,fl_quantity_kg = quantity_lbs_tot * 0.4535924
+    #replace NA with zero for ppb column if area treated is zero
+    ,fl_rate_ppb=case_when(fl_area_ha==0 ~ 0, TRUE ~ fl_rate_ppb1)
     #make year an integer
     ,year = as.integer(year)
   ) %>%
-  select(-c(area_acres_tot,quantity_lbs_tot)) %>%
+  select(-c(area_acres_tot:fl_rate_ppb1)) %>%
+  relocate(fl_rate_ppb,.after = year) %>%
   glimpse()
 #write_csv(herb_format,"./weeds/data_output/franks_tract_fluridone_2006-2021_summary.csv")
 
